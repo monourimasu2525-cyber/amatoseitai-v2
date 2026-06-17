@@ -320,7 +320,7 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
           <div><div class="stitle" style="margin-bottom:4px;">客単価</div><div style="font-size:22px;font-weight:900;" id="led-unit">—</div></div>
         </div>
       </div>
-      <div class="card"><div class="ledger-wrap" id="ledger-table"><span class="spin"></span></div></div>
+      <div class="card"><div id="ledger-table"><span class="spin"></span></div></div>
     </div>
     <div id="lview-day" style="display:none;">
       <div class="mnav">
@@ -351,7 +351,6 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       <button class="vtab" id="vtab-year" onclick="switchView('year')">年別</button>
       <button class="vtab active" id="vtab-month" onclick="switchView('month')">月別</button>
       <button class="vtab" id="vtab-day" onclick="switchView('day')">日別</button>
-      <button class="vtab" id="vtab-cal" onclick="switchView('cal')">暦</button>
     </div>
     <div id="view-year" style="display:none;">
       <div class="yg" id="year-selector"></div>
@@ -401,26 +400,6 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       <div class="card gap"><div style="padding:16px 16px 0;"><div class="stitle">日別実績</div></div><div id="day-table"></div></div>
     </div>
 
-    <!-- カレンダー -->
-    <div id="view-cal" style="display:none;">
-      <div class="mnav">
-        <button class="mnav-btn" onclick="changeCalMonth(-1)">◀ 前月</button>
-        <span class="mnav-label" id="cal-month-label" onclick="openMonthPicker('cal')" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:4px;"></span>
-        <button class="mnav-btn" onclick="changeCalMonth(1)">翌月 ▶</button>
-      </div>
-      <div class="cal-wrap">
-        <div class="cal-header">
-          <div class="cal-hd">日</div><div class="cal-hd">月</div><div class="cal-hd">火</div>
-          <div class="cal-hd">水</div><div class="cal-hd">木</div><div class="cal-hd">金</div>
-          <div class="cal-hd">土</div>
-        </div>
-        <div class="cal-grid" id="cal-grid"><span class="spin"></span></div>
-        <div class="cal-total-row">
-          <span style="font-size:12px;font-weight:700;color:var(--sub);">月間合計</span>
-          <span style="font-size:18px;font-weight:900;color:var(--navy);" id="cal-total">—</span>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -679,7 +658,7 @@ let cHome=null, cDaily=null, cCompare=null, cYear=null, cDay=null;
 // ===== 集計ビュー =====
 function switchView(v) {
   statsView=v;
-  ['year','month','day','cal'].forEach(t => {
+  ['year','month','day'].forEach(t => {
     document.getElementById('vtab-'+t).classList.toggle('active',t===v);
     document.getElementById('view-'+t).style.display=t===v?'':'none';
   });
@@ -689,7 +668,6 @@ function loadCurrentView() {
   if (statsView==='month') loadMonthStats();
   if (statsView==='day')   loadDayStats();
   if (statsView==='year')  loadYearStats();
-  if (statsView==='cal')   loadCalendar();
 }
 
 // ===== 初期化 =====
@@ -956,31 +934,43 @@ async function deleteSaleFromLedgerDay(id,dateStr) {
 async function loadLedger() {
   document.getElementById('ledger-table').innerHTML='<span class="spin"></span>';
   try {
-    const data=await GET('/api/getMonthReport',{year:ledgerYear,month:ledgerMonth});
-    const s=data.summary;
-    document.getElementById('led-total').textContent=fmt(s.totalSales);
-    document.getElementById('led-count').textContent=s.totalCount+'件';
-    document.getElementById('led-unit').textContent=fmt(s.totalCount>0?Math.round(s.totalSales/s.totalCount):0);
-    if (!data.records.length) { document.getElementById('ledger-table').innerHTML='<div style="padding:20px;text-align:center;color:var(--sub2);">この月の記録はありません</div>'; return; }
-    const groups={};
-    data.records.forEach(r=>{(groups[r.date]=groups[r.date]||[]).push(r);});
-    let rowIdx=0, html='<table class="ltbl"><thead><tr><th>時刻</th><th>種別</th><th style="text-align:right;">金額</th><th style="text-align:right;"></th></tr></thead><tbody>';
-    Object.entries(groups).forEach(([date,items])=>{
-      const dayTotal=items.reduce((a,r)=>a+r.amount,0);
-      html+=`<tr class="group-hd"><td colspan="3">${date}　合計 ${fmt(dayTotal)}（${items.length}件）</td><td></td></tr>`;
-      items.forEach(r=>{
-        const cls=rowIdx%2===0?'row-even':'row-odd'; rowIdx++;
-        html+=`<tr class="${cls}"><td style="color:var(--sub2);font-size:13px;">${r.time}</td><td><span class="badge ${r.type==='新規'?'bs':r.type==='常連'?'bj':'bo'}">${esc(r.type)}</span></td><td class="num">${fmt(r.amount)}</td><td style="text-align:right;"><button class="ib" onclick="openEditSale(${r.id},'${esc(r.type)}',${r.amount})" style="margin-right:4px;">編集</button><button class="db" onclick="deleteSaleFromLedger(${r.id},'${date}')">✕</button></td></tr>`;
-      });
+    const [breakdown, stats] = await Promise.all([
+      GET('/api/getDailyBreakdown', {year:ledgerYear, month:ledgerMonth}),
+      GET('/api/getMonthStats', {year:ledgerYear, month:ledgerMonth})
+    ]);
+    document.getElementById('led-total').textContent=fmt(stats.totalSales);
+    document.getElementById('led-count').textContent=stats.totalCount+'件';
+    document.getElementById('led-unit').textContent=fmt(stats.totalCount>0?Math.round(stats.totalSales/stats.totalCount):0);
+    const days=breakdown.days;
+    const now=new Date(), todayY=now.getFullYear(), todayM=now.getMonth()+1, todayD=now.getDate();
+    const dw=['日','月','火','水','木','金','土'];
+    let html='';
+    days.forEach(d=>{
+      const date=new Date(ledgerYear, ledgerMonth-1, d.day);
+      const dow=dw[date.getDay()];
+      const isToday=(ledgerYear===todayY&&ledgerMonth===todayM&&d.day===todayD);
+      const isSun=date.getDay()===0, isSat=date.getDay()===6;
+      const dowColor=isSun?'color:#e53e3e':isSat?'color:#3182ce':'color:var(--sub2)';
+      const hasSale=d.total>0;
+      html+=`<div onclick="${hasSale?`jumpToLedgerDay(${ledgerYear},${ledgerMonth},${d.day})`:'void 0'}"
+        style="display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #f4f5f7;${hasSale?'cursor:pointer;':''}${isToday?'background:#f0f4ff;':''}">
+        <div style="width:46px;flex-shrink:0;">
+          <span style="font-size:15px;font-weight:${hasSale?'900':'600'};${isToday?'color:var(--navy)':'color:'+(hasSale?'var(--text)':'var(--sub2)')};">${d.day}</span>
+          <span style="font-size:11px;font-weight:700;margin-left:3px;${dowColor};">${dow}</span>
+        </div>
+        ${hasSale
+          ? `<div style="flex:1;"><div style="font-size:16px;font-weight:900;color:var(--navy);">${fmt(d.total)}</div><div style="font-size:11px;color:var(--sub2);margin-top:1px;">${d.count}件${d.shinki>0?' · 新規'+fmt(d.shinki):''}${d.joren>0?' · 常連'+fmt(d.joren):''}</div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--sub2)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>`
+          : `<div style="flex:1;color:var(--sub2);font-size:13px;">—</div>`
+        }
+      </div>`;
     });
-    html+=`<tr class="row-total"><td colspan="2" style="font-size:13px;">合計</td><td class="num">${fmt(s.totalSales)}</td><td></td></tr></tbody></table>`;
-    document.getElementById('ledger-table').innerHTML=html;
+    document.getElementById('ledger-table').innerHTML = html || '<div style="padding:20px;text-align:center;color:var(--sub2);">この月の記録はありません</div>';
   } catch(e) { document.getElementById('ledger-table').innerHTML='<div style="padding:18px;text-align:center;color:var(--neg);">取得エラー</div>'; }
 }
-async function deleteSaleFromLedger(id,dateStr) {
-  if (!confirm(`${dateStr}の売上を削除しますか？`)) return;
-  const r=await DEL('/api/deleteSale/'+id);
-  if (r.success) { toast('削除しました'); refreshHome(); loadLedger(); } else toast(r.message,true);
+
+function jumpToLedgerDay(y, m, d) {
+  ledgerDayDate = new Date(y, m-1, d);
+  switchLedger('day');
 }
 
 // ===== 共通編集/削除 =====
