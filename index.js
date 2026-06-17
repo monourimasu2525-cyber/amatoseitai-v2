@@ -14,7 +14,7 @@ async function initDb() {
       id SERIAL PRIMARY KEY,
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW(),
-      type VARCHAR(20) NOT NULL,
+      type VARCHAR(50) NOT NULL,
       amount INTEGER NOT NULL,
       input_method VARCHAR(30) DEFAULT 'WebApp'
     );
@@ -26,6 +26,14 @@ async function initDb() {
       is_active BOOLEAN DEFAULT TRUE,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
+    CREATE INDEX IF NOT EXISTS idx_sales_created_at ON sales(created_at);
+  `);
+  // 既存テーブルのtype列を50文字に拡張（既に50なら何もしない）
+  await pool.query(`
+    DO $$ BEGIN
+      ALTER TABLE sales ALTER COLUMN type TYPE VARCHAR(50);
+    EXCEPTION WHEN others THEN NULL;
+    END $$;
   `);
 }
 
@@ -185,6 +193,28 @@ app.get('/api/getMonthReport', async (req, res) => {
       year:y, month:m, records,
       summary: { shinkiCount, shinkiSales, jorenCount, jorenSales, otherCount, otherSales, totalCount:shinkiCount+jorenCount+otherCount, totalSales:shinkiSales+jorenSales+otherSales }
     });
+  } catch(e) { res.status(500).json({ success:false, message:e.message }); }
+});
+
+// 特定日の記録（台帳・日別用）
+app.get('/api/getDayRecords', async (req, res) => {
+  try {
+    const y = parseInt(req.query.year)  || new Date().getFullYear();
+    const m = parseInt(req.query.month) || new Date().getMonth()+1;
+    const d = parseInt(req.query.day)   || new Date().getDate();
+    const { start, end } = jstRangeOfDay(y, m, d);
+    const r = await pool.query(
+      `SELECT * FROM sales WHERE created_at >= $1 AND created_at < $2 ORDER BY created_at`,
+      [start, end]
+    );
+    const records = r.rows.map(row => ({ id:row.id, date:fmtDate(row.created_at), time:fmtTime(row.created_at), type:row.type, amount:row.amount }));
+    let shinkiCount=0, shinkiSales=0, jorenCount=0, jorenSales=0, otherCount=0, otherSales=0;
+    records.forEach(r => {
+      if (r.type==='新規')      { shinkiCount++; shinkiSales+=r.amount; }
+      else if (r.type==='常連') { jorenCount++;  jorenSales+=r.amount; }
+      else                      { otherCount++;  otherSales+=r.amount; }
+    });
+    res.json({ year:y, month:m, day:d, records, summary:{ shinkiCount, shinkiSales, jorenCount, jorenSales, otherCount, otherSales, totalCount:shinkiCount+jorenCount+otherCount, totalSales:shinkiSales+jorenSales+otherSales } });
   } catch(e) { res.status(500).json({ success:false, message:e.message }); }
 });
 

@@ -231,23 +231,69 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 
 <!-- 台帳 -->
 <div id="page-ledger" class="page">
-  <div class="ph"><h1>台帳</h1><div class="sub" id="ledger-sub">月別の全記録</div></div>
+  <div class="ph"><h1>台帳</h1></div>
   <div class="wrap">
-    <div class="mnav">
-      <button class="mnav-btn" onclick="changeLedgerMonth(-1)">◀ 前月</button>
-      <span class="mnav-label" id="ledger-month-label"></span>
-      <button class="mnav-btn" onclick="changeLedgerMonth(1)">翌月 ▶</button>
+    <div class="vtabs">
+      <button class="vtab" id="ltab-year" onclick="switchLedger('year')">年別</button>
+      <button class="vtab active" id="ltab-month" onclick="switchLedger('month')">月別</button>
+      <button class="vtab" id="ltab-day" onclick="switchLedger('day')">日別</button>
     </div>
-    <div class="card gap">
-      <div style="padding:16px 16px 0;"><div class="stitle">月間合計</div></div>
-      <div style="padding:0 16px 14px;display:flex;gap:20px;flex-wrap:wrap;">
-        <div><div style="font-size:11px;color:var(--sub);font-weight:600;text-transform:uppercase;letter-spacing:.4px;">売上合計</div><div style="font-size:22px;font-weight:900;color:var(--navy);" id="led-total">—</div></div>
-        <div><div style="font-size:11px;color:var(--sub);font-weight:600;text-transform:uppercase;letter-spacing:.4px;">件数</div><div style="font-size:22px;font-weight:900;" id="led-count">—</div></div>
-        <div><div style="font-size:11px;color:var(--sub);font-weight:600;text-transform:uppercase;letter-spacing:.4px;">客単価</div><div style="font-size:22px;font-weight:900;" id="led-unit">—</div></div>
+
+    <!-- 台帳 年別 -->
+    <div id="lview-year" style="display:none;">
+      <div class="yg" id="ledger-year-selector"></div>
+      <div class="card gap">
+        <div style="padding:14px 16px 0;"><div class="stitle">年間サマリー</div></div>
+        <div style="padding:0 16px 14px;display:flex;gap:20px;flex-wrap:wrap;" id="led-year-summary">
+          <div><div class="stitle" style="margin-bottom:4px;">売上合計</div><div style="font-size:22px;font-weight:900;color:var(--navy);" id="ledy-total">—</div></div>
+          <div><div class="stitle" style="margin-bottom:4px;">件数</div><div style="font-size:22px;font-weight:900;" id="ledy-count">—</div></div>
+          <div><div class="stitle" style="margin-bottom:4px;">客単価</div><div style="font-size:22px;font-weight:900;" id="ledy-unit">—</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ledger-wrap" id="ledger-year-table"><span class="spin"></span></div>
       </div>
     </div>
-    <div class="card">
-      <div class="ledger-wrap" id="ledger-table"><span class="spin"></span></div>
+
+    <!-- 台帳 月別 -->
+    <div id="lview-month">
+      <div class="mnav">
+        <button class="mnav-btn" onclick="changeLedgerMonth(-1)">◀ 前月</button>
+        <span class="mnav-label" id="ledger-month-label"></span>
+        <button class="mnav-btn" onclick="changeLedgerMonth(1)">翌月 ▶</button>
+      </div>
+      <div class="card gap">
+        <div style="padding:14px 16px 0;"><div class="stitle">月間合計</div></div>
+        <div style="padding:0 16px 14px;display:flex;gap:20px;flex-wrap:wrap;">
+          <div><div class="stitle" style="margin-bottom:4px;">売上合計</div><div style="font-size:22px;font-weight:900;color:var(--navy);" id="led-total">—</div></div>
+          <div><div class="stitle" style="margin-bottom:4px;">件数</div><div style="font-size:22px;font-weight:900;" id="led-count">—</div></div>
+          <div><div class="stitle" style="margin-bottom:4px;">客単価</div><div style="font-size:22px;font-weight:900;" id="led-unit">—</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ledger-wrap" id="ledger-table"><span class="spin"></span></div>
+      </div>
+    </div>
+
+    <!-- 台帳 日別 -->
+    <div id="lview-day" style="display:none;">
+      <div class="mnav">
+        <button class="mnav-btn" onclick="changeLedgerDay(-1)">◀ 前日</button>
+        <span class="mnav-label" id="ledger-day-label"></span>
+        <button class="mnav-btn" onclick="changeLedgerDay(1)">翌日 ▶</button>
+      </div>
+      <div class="card gap">
+        <div style="padding:14px 16px 0;"><div class="stitle">本日合計</div></div>
+        <div style="padding:0 16px 14px;display:flex;gap:20px;flex-wrap:wrap;">
+          <div><div class="stitle" style="margin-bottom:4px;">売上合計</div><div style="font-size:22px;font-weight:900;color:var(--navy);" id="ledd-total">—</div></div>
+          <div><div class="stitle" style="margin-bottom:4px;">件数</div><div style="font-size:22px;font-weight:900;" id="ledd-count">—</div></div>
+          <div><div class="stitle" style="margin-bottom:4px;">新規</div><div style="font-size:22px;font-weight:900;" id="ledd-shinki">—</div></div>
+          <div><div class="stitle" style="margin-bottom:4px;">常連</div><div style="font-size:22px;font-weight:900;" id="ledd-joren">—</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ledger-wrap" id="ledger-day-table"><span class="spin"></span></div>
+      </div>
     </div>
   </div>
 </div>
@@ -458,7 +504,7 @@ function go(page) {
     document.getElementById('nav-'+p).classList.toggle('active', p===page);
   });
   curPage = page;
-  if (page==='ledger')   loadLedger();
+  if (page==='ledger')   loadCurrentLedger();
   if (page==='stats')    loadCurrentView();
   if (page==='settings') loadMaster();
 }
@@ -466,6 +512,7 @@ function go(page) {
 // ===== 状態 =====
 let masterItems=[], statsView='month';
 let statsYear, statsMonth, dayYear, dayMonth, selectedYear, ledgerYear, ledgerMonth;
+let ledgerView='month', ledgerDayDate=new Date(), ledgerSelectedYear=new Date().getFullYear();
 let cHome=null, cDaily=null, cCompare=null, cYear=null, cDay=null;
 
 // ===== 集計ビュー =====
@@ -489,9 +536,9 @@ async function init() {
   document.getElementById('home-date').textContent=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${dw[d.getDay()]}）`;
   statsYear=dayYear=ledgerYear=selectedYear=d.getFullYear();
   statsMonth=dayMonth=ledgerMonth=d.getMonth()+1;
-  updateStatsLabel(); updateDayLabel(); updateLedgerLabel();
+  updateStatsLabel(); updateDayLabel(); updateLedgerLabel(); updateLedgerDayLabel();
   document.getElementById('home-month-label').textContent=`${d.getMonth()+1}月`;
-  initSelects(); buildYearSelector();
+  initSelects(); buildYearSelector(); buildLedgerYearSelector();
   try {
     const data=await GET('/api/initData');
     applyMaster(data.master||[]);
@@ -648,7 +695,7 @@ async function refreshHome() {
 
 async function quickAdd(type,amount) {
   const r=await POST('/api/addSale',{type,amount});
-  if (r.success) { toast(`${type} ${fmt(amount)}`); refreshHome(); if(curPage==='ledger') loadLedger(); }
+  if (r.success) { toast(`${type} ${fmt(amount)}`); refreshHome(); if(curPage==='ledger') loadCurrentLedger(); }
   else toast(r.message,true);
 }
 
@@ -658,7 +705,7 @@ async function addCustomSale() {
   if (!amount||amount<=0) { toast('正しい金額を入力してください',true); return; }
   const btn=document.getElementById('custom-submit-btn'); btn.disabled=true;
   const r=await POST('/api/addSale',{type,amount});
-  if (r.success) { toast(`登録しました：${type} ${fmt(amount)}`); closeModal('custom-modal'); document.getElementById('custom-type').value=''; document.getElementById('custom-amount').value=''; refreshHome(); if(curPage==='ledger') loadLedger(); }
+  if (r.success) { toast(`登録しました：${type} ${fmt(amount)}`); closeModal('custom-modal'); document.getElementById('custom-type').value=''; document.getElementById('custom-amount').value=''; refreshHome(); if(curPage==='ledger') loadCurrentLedger(); }
   else toast(r.message,true);
   btn.disabled=false;
 }
@@ -666,6 +713,108 @@ async function addCustomSale() {
 // ===== 台帳 =====
 function updateLedgerLabel() { document.getElementById('ledger-month-label').textContent=`${ledgerYear}年${ledgerMonth}月`; }
 function changeLedgerMonth(d) { ledgerMonth+=d; if(ledgerMonth>12){ledgerMonth=1;ledgerYear++;} if(ledgerMonth<1){ledgerMonth=12;ledgerYear--;} updateLedgerLabel(); loadLedger(); }
+
+// 台帳タブ切替
+function switchLedger(v) {
+  ledgerView=v;
+  ['year','month','day'].forEach(t => {
+    document.getElementById('ltab-'+t).classList.toggle('active',t===v);
+    document.getElementById('lview-'+t).style.display=t===v?'':'none';
+  });
+  loadCurrentLedger();
+}
+function loadCurrentLedger() {
+  if (ledgerView==='month') loadLedger();
+  if (ledgerView==='year')  loadLedgerYear();
+  if (ledgerView==='day')   loadLedgerDay();
+}
+
+// 台帳 年別
+function buildLedgerYearSelector() {
+  const now=new Date().getFullYear();
+  document.getElementById('ledger-year-selector').innerHTML=
+    Array.from({length:4},(_,i)=>now-i).map(y=>`<button class="yb${y===ledgerSelectedYear?' active':''}" id="lybtn-${y}" onclick="selectLedgerYear(${y})">${y}年</button>`).join('');
+}
+function selectLedgerYear(y) {
+  ledgerSelectedYear=y;
+  document.querySelectorAll('#ledger-year-selector .yb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('lybtn-'+y)?.classList.add('active');
+  loadLedgerYear();
+}
+async function loadLedgerYear() {
+  const y=ledgerSelectedYear;
+  document.getElementById('ledger-year-table').innerHTML='<span class="spin"></span>';
+  try {
+    const results=await Promise.all(Array.from({length:12},(_,i)=>GET('/api/getMonthStats',{year:y,month:i+1})));
+    const totalSales=results.reduce((a,r)=>a+r.totalSales,0), totalCount=results.reduce((a,r)=>a+r.totalCount,0);
+    document.getElementById('ledy-total').textContent=fmt(totalSales);
+    document.getElementById('ledy-count').textContent=totalCount+'件';
+    document.getElementById('ledy-unit').textContent=fmt(totalCount>0?Math.round(totalSales/totalCount):0);
+    document.getElementById('ledger-year-table').innerHTML=`<table class="ltbl">
+      <thead><tr><th>月</th><th class="r">件数</th><th class="r">新規</th><th class="r">常連</th><th class="r">合計</th></tr></thead>
+      <tbody>
+        ${results.map((r,i)=>`<tr class="${i%2===0?'row-even':'row-odd'}">
+          <td style="font-weight:700;">${i+1}月</td>
+          <td class="r" style="color:var(--sub);">${r.totalCount>0?r.totalCount+'件':'—'}</td>
+          <td class="r">${r.shinkiSales>0?fmt(r.shinkiSales):'—'}</td>
+          <td class="r">${r.jorenSales>0?fmt(r.jorenSales):'—'}</td>
+          <td class="num">${r.totalSales>0?fmt(r.totalSales):'—'}</td>
+        </tr>`).join('')}
+        <tr class="row-total"><td colspan="2">合計 ${totalCount}件</td><td class="r">${fmt(results.reduce((a,r)=>a+r.shinkiSales,0))}</td><td class="r">${fmt(results.reduce((a,r)=>a+r.jorenSales,0))}</td><td class="num">${fmt(totalSales)}</td></tr>
+      </tbody>
+    </table>`;
+  } catch(e) { document.getElementById('ledger-year-table').innerHTML='<div style="padding:18px;text-align:center;color:var(--neg);">取得エラー</div>'; }
+}
+
+// 台帳 日別
+function updateLedgerDayLabel() {
+  const d=ledgerDayDate, dw=['日','月','火','水','木','金','土'];
+  document.getElementById('ledger-day-label').textContent=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${dw[d.getDay()]}）`;
+}
+function changeLedgerDay(delta) {
+  ledgerDayDate=new Date(ledgerDayDate.getTime()+delta*86400000);
+  updateLedgerDayLabel();
+  loadLedgerDay();
+}
+async function loadLedgerDay() {
+  const y=ledgerDayDate.getFullYear(), m=ledgerDayDate.getMonth()+1, d=ledgerDayDate.getDate();
+  document.getElementById('ledger-day-table').innerHTML='<span class="spin"></span>';
+  try {
+    const data=await GET('/api/getDayRecords',{year:y,month:m,day:d});
+    const s=data.summary;
+    document.getElementById('ledd-total').textContent=fmt(s.totalSales);
+    document.getElementById('ledd-count').textContent=s.totalCount+'件';
+    document.getElementById('ledd-shinki').textContent=fmt(s.shinkiSales)+'（'+s.shinkiCount+'件）';
+    document.getElementById('ledd-joren').textContent=fmt(s.jorenSales)+'（'+s.jorenCount+'件）';
+    if (!data.records.length) {
+      document.getElementById('ledger-day-table').innerHTML='<div style="padding:20px;text-align:center;color:var(--sub2);">この日の記録はありません</div>';
+      return;
+    }
+    const dateStr=`${y}/${m}/${d}`;
+    let rowIdx=0;
+    let html='<table class="ltbl"><thead><tr><th>時刻</th><th>種別</th><th style="text-align:right;">金額</th><th style="text-align:right;"></th></tr></thead><tbody>';
+    data.records.forEach(r=>{
+      const cls=rowIdx%2===0?'row-even':'row-odd'; rowIdx++;
+      html+=`<tr class="${cls}">
+        <td style="color:var(--sub2);font-size:13px;">${r.time}</td>
+        <td><span class="badge ${r.type==='新規'?'bs':r.type==='常連'?'bj':'bo'}">${esc(r.type)}</span></td>
+        <td class="num">${fmt(r.amount)}</td>
+        <td style="text-align:right;">
+          <button class="ib" onclick="openEditSale(${r.id},'${esc(r.type)}',${r.amount})" style="margin-right:4px;">編集</button>
+          <button class="db" onclick="deleteSaleFromLedgerDay(${r.id},'${dateStr}')">✕</button>
+        </td>
+      </tr>`;
+    });
+    html+=`<tr class="row-total"><td colspan="2">合計</td><td class="num">${fmt(s.totalSales)}</td><td></td></tr>`;
+    html+='</tbody></table>';
+    document.getElementById('ledger-day-table').innerHTML=html;
+  } catch(e) { document.getElementById('ledger-day-table').innerHTML='<div style="padding:18px;text-align:center;color:var(--neg);">取得エラー</div>'; }
+}
+async function deleteSaleFromLedgerDay(id,dateStr) {
+  if (!confirm(`${dateStr}の売上を削除しますか？`)) return;
+  const r=await DEL('/api/deleteSale/'+id);
+  if (r.success) { toast('削除しました'); refreshHome(); loadLedgerDay(); } else toast(r.message,true);
+}
 
 async function loadLedger() {
   document.getElementById('ledger-table').innerHTML='<span class="spin"></span>';
@@ -717,13 +866,13 @@ async function confirmEdit() {
   const id=document.getElementById('edit-id').value, type=document.getElementById('edit-type').value, amount=parseInt(document.getElementById('edit-amount').value);
   if (!id||!type||!amount) { toast('全項目を入力してください',true); return; }
   const r=await PUT('/api/editSale/'+id,{type,amount});
-  if (r.success) { toast('修正しました'); closeModal('edit-modal'); refreshHome(); if(curPage==='ledger') loadLedger(); }
+  if (r.success) { toast('修正しました'); closeModal('edit-modal'); refreshHome(); if(curPage==='ledger') loadCurrentLedger(); }
   else toast(r.message,true);
 }
 async function deleteSale(id,dateStr) {
   if (!confirm(`${dateStr}の売上を削除しますか？`)) return;
   const r=await DEL('/api/deleteSale/'+id);
-  if (r.success) { toast('削除しました'); refreshHome(); if(curPage==='ledger') loadLedger(); }
+  if (r.success) { toast('削除しました'); refreshHome(); if(curPage==='ledger') loadCurrentLedger(); }
   else toast(r.message,true);
 }
 
