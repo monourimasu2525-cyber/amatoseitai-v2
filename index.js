@@ -14,6 +14,17 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 async function initDb() {
+  // user_id列がない旧テーブルは一度だけ作り直す（以降は何もしない）
+  const check = await pool.query(`
+    SELECT column_name FROM information_schema.columns
+    WHERE table_name='sales' AND column_name='user_id'
+  `);
+  if (check.rows.length === 0) {
+    await pool.query(`
+      DROP TABLE IF EXISTS sales CASCADE;
+      DROP TABLE IF EXISTS master_items CASCADE;
+    `);
+  }
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
