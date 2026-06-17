@@ -18,6 +18,18 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 button{font-family:inherit;cursor:pointer;}
 
+/* ===== ログイン画面 ===== */
+#auth-screen{display:none;position:fixed;inset:0;background:var(--navy);z-index:300;align-items:center;justify-content:center;padding:24px;}
+#auth-screen.show{display:flex;}
+.auth-box{background:#fff;border-radius:20px;padding:32px 24px;width:100%;max-width:380px;}
+.auth-logo{font-size:20px;font-weight:900;color:var(--navy);text-align:center;margin-bottom:4px;}
+.auth-sub{font-size:13px;color:var(--sub);text-align:center;margin-bottom:28px;}
+.auth-tabs{display:flex;background:#edf0f4;border-radius:11px;padding:3px;margin-bottom:22px;}
+.auth-tab{flex:1;padding:9px 0;text-align:center;font-size:13px;font-weight:700;color:var(--sub);border:none;background:none;border-radius:9px;transition:background .15s,color .15s;}
+.auth-tab.active{background:#fff;color:var(--navy);box-shadow:0 1px 4px rgba(0,0,0,.1);}
+.auth-err{background:var(--neg-l);color:var(--neg);border-radius:9px;padding:10px 14px;font-size:13px;font-weight:600;margin-bottom:14px;display:none;}
+.auth-err.show{display:block;}
+
 /* ナビ */
 #nav{position:fixed;bottom:0;left:0;right:0;height:calc(var(--nav-h)+var(--safe-b));background:#fff;border-top:1px solid var(--border);display:flex;align-items:stretch;z-index:100;}
 .nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:none;color:var(--sub2);font-size:10px;font-weight:600;padding-bottom:var(--safe-b);letter-spacing:.3px;}
@@ -131,7 +143,7 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .tbl td.num{font-weight:700;text-align:right;}
 .tbl td.r{text-align:right;}
 
-/* 台帳テーブル（スプレッドシート風） */
+/* 台帳テーブル */
 .ledger-wrap{overflow-x:auto;}
 .ltbl{width:100%;border-collapse:collapse;font-size:14px;min-width:360px;}
 .ltbl th{background:#0f172a;color:rgba(255,255,255,.85);font-size:11px;font-weight:700;padding:10px 12px;text-align:left;letter-spacing:.4px;text-transform:uppercase;position:sticky;top:0;}
@@ -157,11 +169,36 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .spin{width:20px;height:20px;border:2px solid #e9ecf0;border-top-color:var(--navy);border-radius:50%;animation:sp .7s linear infinite;margin:28px auto;display:block;}
 @keyframes sp{to{transform:rotate(360deg);}}
 
+/* CSV import */
+.import-area{border:2px dashed var(--border);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:border-color .15s;margin-bottom:12px;}
+.import-area:hover,.import-area.dragover{border-color:var(--navy);background:var(--navy-l);}
+.import-area input[type=file]{display:none;}
+.import-result{border-radius:10px;padding:12px 14px;font-size:13px;font-weight:600;margin-top:10px;display:none;}
+.import-result.ok{background:var(--pos-l);color:var(--pos);display:block;}
+.import-result.err{background:var(--neg-l);color:var(--neg);display:block;}
+
 @media print{#nav,#toast,.no-print{display:none!important;}.page{display:block!important;padding-bottom:0;}.page:not(#page-accounting){display:none!important;}}
 </style>
 </head>
 <body>
 
+<!-- ===== ログイン画面 ===== -->
+<div id="auth-screen" class="show">
+  <div class="auth-box">
+    <div class="auth-logo">あまと整体院</div>
+    <div class="auth-sub">売上管理システム</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">ログイン</button>
+      <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">新規登録</button>
+    </div>
+    <div class="auth-err" id="auth-err"></div>
+    <div class="fg"><label class="fl">メールアドレス</label><input type="email" class="fc" id="auth-email" placeholder="example@email.com" autocomplete="email"></div>
+    <div class="fg"><label class="fl">パスワード</label><input type="password" class="fc" id="auth-password" placeholder="6文字以上" autocomplete="current-password"></div>
+    <button class="btn btn-p btn-w" id="auth-btn" onclick="doAuth()">ログイン</button>
+  </div>
+</div>
+
+<!-- ===== アプリ本体 ===== -->
 <nav id="nav">
   <button class="nb active" id="nav-home" onclick="go('home')">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -207,8 +244,6 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       <div class="cnt" id="kpi-month-sub"></div>
       <div class="pb"><div class="pf" id="month-progress" style="width:0%"></div></div>
     </div>
-
-    <!-- 今月の日別グラフ -->
     <div class="card cp gap">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
         <div class="stitle" style="margin:0;">今月の日別売上</div>
@@ -216,14 +251,12 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       </div>
       <div class="cw" style="height:150px;"><canvas id="home-chart"></canvas></div>
     </div>
-
     <div class="stitle">クイック入力</div>
     <div class="ql gap" id="quick-btns"><span class="spin"></span></div>
     <button class="custom-btn gap" onclick="openModal('custom-modal')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       金額を指定して入力
     </button>
-
     <div class="stitle">今日の記録</div>
     <div class="card"><div id="today-list" style="padding:0 16px;"><span class="spin"></span></div></div>
   </div>
@@ -238,8 +271,6 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       <button class="vtab active" id="ltab-month" onclick="switchLedger('month')">月別</button>
       <button class="vtab" id="ltab-day" onclick="switchLedger('day')">日別</button>
     </div>
-
-    <!-- 台帳 年別 -->
     <div id="lview-year" style="display:none;">
       <div class="yg" id="ledger-year-selector"></div>
       <div class="card gap">
@@ -250,12 +281,8 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
           <div><div class="stitle" style="margin-bottom:4px;">客単価</div><div style="font-size:22px;font-weight:900;" id="ledy-unit">—</div></div>
         </div>
       </div>
-      <div class="card">
-        <div class="ledger-wrap" id="ledger-year-table"><span class="spin"></span></div>
-      </div>
+      <div class="card"><div class="ledger-wrap" id="ledger-year-table"><span class="spin"></span></div></div>
     </div>
-
-    <!-- 台帳 月別 -->
     <div id="lview-month">
       <div class="mnav">
         <button class="mnav-btn" onclick="changeLedgerMonth(-1)">◀ 前月</button>
@@ -270,12 +297,8 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
           <div><div class="stitle" style="margin-bottom:4px;">客単価</div><div style="font-size:22px;font-weight:900;" id="led-unit">—</div></div>
         </div>
       </div>
-      <div class="card">
-        <div class="ledger-wrap" id="ledger-table"><span class="spin"></span></div>
-      </div>
+      <div class="card"><div class="ledger-wrap" id="ledger-table"><span class="spin"></span></div></div>
     </div>
-
-    <!-- 台帳 日別 -->
     <div id="lview-day" style="display:none;">
       <div class="mnav">
         <button class="mnav-btn" onclick="changeLedgerDay(-1)">◀ 前日</button>
@@ -291,9 +314,7 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
           <div><div class="stitle" style="margin-bottom:4px;">常連</div><div style="font-size:22px;font-weight:900;" id="ledd-joren">—</div></div>
         </div>
       </div>
-      <div class="card">
-        <div class="ledger-wrap" id="ledger-day-table"><span class="spin"></span></div>
-      </div>
+      <div class="card"><div class="ledger-wrap" id="ledger-day-table"><span class="spin"></span></div></div>
     </div>
   </div>
 </div>
@@ -307,8 +328,6 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       <button class="vtab active" id="vtab-month" onclick="switchView('month')">月別</button>
       <button class="vtab" id="vtab-day" onclick="switchView('day')">日別</button>
     </div>
-
-    <!-- 年別 -->
     <div id="view-year" style="display:none;">
       <div class="yg" id="year-selector"></div>
       <div class="kpi-main gap">
@@ -320,17 +339,9 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
         <div class="kc"><div class="lbl">新規</div><div class="val" id="y-shinki">—</div><div class="sub" id="y-shinki-c"></div></div>
         <div class="kc"><div class="lbl">常連</div><div class="val" id="y-joren">—</div><div class="sub" id="y-joren-c"></div></div>
       </div>
-      <div class="card cp gap">
-        <div class="stitle">月別推移</div>
-        <div class="cw"><canvas id="year-chart"></canvas></div>
-      </div>
-      <div class="card gap">
-        <div style="padding:16px 16px 0;"><div class="stitle">月別内訳</div></div>
-        <div id="year-table"></div>
-      </div>
+      <div class="card cp gap"><div class="stitle">月別推移</div><div class="cw"><canvas id="year-chart"></canvas></div></div>
+      <div class="card gap"><div style="padding:16px 16px 0;"><div class="stitle">月別内訳</div></div><div id="year-table"></div></div>
     </div>
-
-    <!-- 月別 -->
     <div id="view-month">
       <div class="mnav">
         <button class="mnav-btn" onclick="changeStatsMonth(-1)">◀ 前月</button>
@@ -351,35 +362,18 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
         <div class="sc"><div class="sv" id="m-unit2">—</div><div class="sl">客単価</div></div>
         <div class="sc"><div class="sv" id="m-diff" style="font-size:15px;">—</div><div class="sl">先月比</div></div>
       </div>
-      <div class="card cp gap">
-        <div class="stitle">日別売上（棒グラフ）</div>
-        <div class="cw" style="height:250px;"><canvas id="daily-chart"></canvas></div>
-      </div>
-      <div class="card cp gap">
-        <div class="stitle">3ヶ月比較</div>
-        <div class="cw" style="height:170px;"><canvas id="compare-chart"></canvas></div>
-      </div>
-      <div class="card gap">
-        <div style="padding:16px 16px 0;"><div class="stitle">種別内訳</div></div>
-        <div id="month-table"></div>
-      </div>
+      <div class="card cp gap"><div class="stitle">日別売上（棒グラフ）</div><div class="cw" style="height:250px;"><canvas id="daily-chart"></canvas></div></div>
+      <div class="card cp gap"><div class="stitle">3ヶ月比較</div><div class="cw" style="height:170px;"><canvas id="compare-chart"></canvas></div></div>
+      <div class="card gap"><div style="padding:16px 16px 0;"><div class="stitle">種別内訳</div></div><div id="month-table"></div></div>
     </div>
-
-    <!-- 日別 -->
     <div id="view-day" style="display:none;">
       <div class="mnav">
         <button class="mnav-btn" onclick="changeDayMonth(-1)">◀ 前月</button>
         <span class="mnav-label" id="day-month-label"></span>
         <button class="mnav-btn" onclick="changeDayMonth(1)">翌月 ▶</button>
       </div>
-      <div class="card cp gap">
-        <div class="stitle">日別売上（棒グラフ）</div>
-        <div class="cw" style="height:250px;"><canvas id="day-chart"></canvas></div>
-      </div>
-      <div class="card gap">
-        <div style="padding:16px 16px 0;"><div class="stitle">日別実績</div></div>
-        <div id="day-table"></div>
-      </div>
+      <div class="card cp gap"><div class="stitle">日別売上（棒グラフ）</div><div class="cw" style="height:250px;"><canvas id="day-chart"></canvas></div></div>
+      <div class="card gap"><div style="padding:16px 16px 0;"><div class="stitle">日別実績</div></div><div id="day-table"></div></div>
     </div>
   </div>
 </div>
@@ -407,6 +401,20 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 <div id="page-settings" class="page">
   <div class="ph"><h1>設定</h1></div>
   <div class="wrap">
+
+    <!-- アカウント情報 -->
+    <div class="stitle">アカウント</div>
+    <div class="card cp gap">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--navy);" id="settings-email">—</div>
+          <div style="font-size:12px;color:var(--sub2);margin-top:2px;">ログイン中</div>
+        </div>
+        <button class="btn btn-d btn-sm" onclick="doLogout()">ログアウト</button>
+      </div>
+    </div>
+
+    <!-- マスタ追加 -->
     <div class="stitle">マスタ追加</div>
     <div class="card cp gap">
       <div class="fg"><label class="fl">種別名</label><input type="text" class="fc" id="new-type" placeholder="例：新規、常連"></div>
@@ -416,21 +424,36 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     </div>
     <div class="stitle">マスタ一覧</div>
     <div class="card gap"><div id="master-list" style="padding:0 16px;"><span class="spin"></span></div></div>
+
+    <!-- CSVエクスポート -->
     <div class="stitle">CSVエクスポート</div>
-    <div class="card cp">
+    <div class="card cp gap">
       <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:12px;">
         <div style="flex:1;"><label class="fl">年</label><select class="fc" id="csv-year"></select></div>
         <div style="flex:1;"><label class="fl">月</label><select class="fc" id="csv-month"></select></div>
       </div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-s btn-sm" onclick="downloadCsvFrom()">月別CSV</button>
-        <button class="btn btn-s btn-sm" onclick="window.open(API+'/api/getCsv')">全データCSV</button>
+        <button class="btn btn-s btn-sm" onclick="downloadCsvAll()">全データCSV</button>
       </div>
+    </div>
+
+    <!-- CSVインポート -->
+    <div class="stitle">CSVインポート</div>
+    <div class="card cp gap">
+      <div style="font-size:12px;color:var(--sub);margin-bottom:12px;">エクスポートしたCSVと同じ形式（日付,時刻,種別,金額）でインポートできます。</div>
+      <div class="import-area" id="import-area" onclick="document.getElementById('csv-file').click()">
+        <input type="file" id="csv-file" accept=".csv,text/csv" onchange="handleCsvFile(this.files[0])">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--sub2)" stroke-width="1.5" style="margin-bottom:8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div style="font-size:14px;font-weight:700;color:var(--sub);margin-bottom:4px;">CSVファイルを選択</div>
+        <div style="font-size:12px;color:var(--sub2);">またはここにドロップ</div>
+      </div>
+      <div id="import-result" class="import-result"></div>
     </div>
   </div>
 </div>
 
-<!-- カスタム入力モーダル（ホームから） -->
+<!-- カスタム入力モーダル -->
 <div class="modal" id="custom-modal">
   <div class="mbox">
     <div class="mtitle">売上を入力</div>
@@ -475,22 +498,101 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 <div id="toast"></div>
 
 <script>
-const API  = 'https://amatoseitai-v2-production.up.railway.app';
+const API = 'https://amatoseitai-v2-production.up.railway.app';
 const fmt  = n => '¥' + Number(n).toLocaleString();
 const fmtS = n => n >= 10000 ? (n/10000).toFixed(1).replace('.0','')+'万' : '¥'+Number(n).toLocaleString();
 const esc  = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/'/g,"\\'");
 
+// ===== 認証 =====
+let authToken = localStorage.getItem('auth_token');
+let authEmail = localStorage.getItem('auth_email');
+
+function getHeaders() {
+  return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` };
+}
+
+async function GET(p, q={}) {
+  const s = Object.keys(q).length ? '?'+new URLSearchParams(q) : '';
+  const r = await fetch(API+p+s, { headers: getHeaders() });
+  if (r.status === 401) { doLogout(); throw new Error('認証切れ'); }
+  return r.json();
+}
+async function POST(p, b) {
+  const r = await fetch(API+p, { method:'POST', headers: getHeaders(), body: JSON.stringify(b) });
+  if (r.status === 401) { doLogout(); throw new Error('認証切れ'); }
+  return r.json();
+}
+async function PUT(p, b) {
+  const r = await fetch(API+p, { method:'PUT', headers: getHeaders(), body: JSON.stringify(b) });
+  if (r.status === 401) { doLogout(); throw new Error('認証切れ'); }
+  return r.json();
+}
+async function DEL(p) {
+  const r = await fetch(API+p, { method:'DELETE', headers: getHeaders() });
+  if (r.status === 401) { doLogout(); throw new Error('認証切れ'); }
+  return r.json();
+}
+
+// ===== ログイン画面 =====
+let authMode = 'login';
+function switchAuthTab(mode) {
+  authMode = mode;
+  document.getElementById('tab-login').classList.toggle('active', mode==='login');
+  document.getElementById('tab-register').classList.toggle('active', mode==='register');
+  document.getElementById('auth-btn').textContent = mode==='login' ? 'ログイン' : '新規登録';
+  document.getElementById('auth-err').classList.remove('show');
+}
+
+async function doAuth() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const errEl = document.getElementById('auth-err');
+  const btn = document.getElementById('auth-btn');
+  errEl.classList.remove('show');
+  if (!email || !password) { errEl.textContent = 'メールアドレスとパスワードを入力してください'; errEl.classList.add('show'); return; }
+  btn.disabled = true;
+  try {
+    const endpoint = authMode === 'login' ? '/api/login' : '/api/register';
+    const r = await fetch(API + endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, password }) });
+    const data = await r.json();
+    if (data.success) {
+      authToken = data.token;
+      authEmail = data.email;
+      localStorage.setItem('auth_token', authToken);
+      localStorage.setItem('auth_email', authEmail);
+      document.getElementById('auth-screen').classList.remove('show');
+      init();
+    } else {
+      errEl.textContent = data.message;
+      errEl.classList.add('show');
+    }
+  } catch(e) {
+    errEl.textContent = 'サーバーに接続できません';
+    errEl.classList.add('show');
+  }
+  btn.disabled = false;
+}
+
+// Enterキー対応
+document.getElementById('auth-email').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('auth-password').focus(); });
+document.getElementById('auth-password').addEventListener('keydown', e => { if(e.key==='Enter') doAuth(); });
+
+function doLogout() {
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('auth_email');
+  authToken = null; authEmail = null;
+  document.getElementById('auth-screen').classList.add('show');
+  document.getElementById('auth-err').classList.remove('show');
+  document.getElementById('auth-password').value = '';
+}
+
+// ===== トースト / モーダル =====
 function toast(msg, err=false) {
   const el = document.getElementById('toast');
   el.textContent = msg; el.style.background = err ? '#b91c1c' : '#0f172a';
   el.classList.add('show'); clearTimeout(el._t);
   el._t = setTimeout(() => el.classList.remove('show'), 3000);
 }
-async function GET(p, q={}) { const s=Object.keys(q).length?'?'+new URLSearchParams(q):''; return (await fetch(API+p+s)).json(); }
-async function POST(p,b)    { return (await fetch(API+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})).json(); }
-async function PUT(p,b)     { return (await fetch(API+p,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})).json(); }
-async function DEL(p)       { return (await fetch(API+p,{method:'DELETE'})).json(); }
-
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); }));
@@ -506,7 +608,7 @@ function go(page) {
   curPage = page;
   if (page==='ledger')   loadCurrentLedger();
   if (page==='stats')    loadCurrentView();
-  if (page==='settings') loadMaster();
+  if (page==='settings') { loadMaster(); document.getElementById('settings-email').textContent = authEmail || '—'; }
 }
 
 // ===== 状態 =====
@@ -546,9 +648,15 @@ async function init() {
     applyTodayHistory(data.history?.records||[]);
     loadHomeChart();
   } catch(e) {
-    toast('データ取得エラー',true);
+    if (e.message !== '認証切れ') toast('データ取得エラー',true);
     ['today-list','quick-btns'].forEach(id => { document.getElementById(id).innerHTML='<div style="padding:16px;text-align:center;color:var(--sub2);">接続エラー</div>'; });
   }
+}
+
+// トークンがあれば直接initへ、なければログイン画面を表示
+if (authToken) {
+  document.getElementById('auth-screen').classList.remove('show');
+  init();
 }
 
 function initSelects() {
@@ -571,16 +679,14 @@ function selectYear(y) {
 
 // ===== マスタ =====
 function applyMaster(items) { masterItems=items; renderQuickBtns(); updateTypeSelects(); renderMasterList(); }
-
 function renderQuickBtns() {
   const el=document.getElementById('quick-btns');
   if (!masterItems.length) { el.innerHTML='<div style="text-align:center;color:var(--sub2);padding:10px;">設定からマスタを追加してください</div>'; return; }
   el.innerHTML=masterItems.map((item,i)=>`<button class="qi${i===0?' p':''}" onclick="quickAdd('${esc(item.type)}',${item.amount})"><span class="n">${esc(item.type)}</span><span class="a">${fmt(item.amount)}</span></button>`).join('');
 }
-
 function updateTypeSelects() {
   const opts=masterItems.map(i=>`<option value="${esc(i.type)}" data-amount="${i.amount}">${esc(i.type)} (${fmt(i.amount)})</option>`).join('');
-  ['input-type','custom-type','edit-type'].forEach(id => {
+  ['custom-type','edit-type'].forEach(id => {
     const el=document.getElementById(id); if(!el) return;
     const ph=id==='edit-type'?'':('<option value="">選択してください</option>');
     el.innerHTML=ph+opts;
@@ -588,11 +694,9 @@ function updateTypeSelects() {
   const it=document.getElementById('custom-type');
   if (it) it.onchange=()=>{ const o=it.options[it.selectedIndex]; if(o?.dataset.amount) document.getElementById('custom-amount').value=o.dataset.amount; };
 }
-
 async function loadMaster() {
-  try { const d=await GET('/api/getMaster'); applyMaster(d.items||[]); } catch(e) { toast('マスタ取得エラー',true); }
+  try { const d=await GET('/api/getMaster'); applyMaster(d.items||[]); } catch(e) { if(e.message!=='認証切れ') toast('マスタ取得エラー',true); }
 }
-
 function renderMasterList() {
   const el=document.getElementById('master-list');
   if (!masterItems.length) { el.innerHTML='<div style="padding:16px;text-align:center;color:var(--sub2);">マスタが空です</div>'; return; }
@@ -603,7 +707,6 @@ function renderMasterList() {
       <button class="db" onclick="deleteMaster(${item.id},'${esc(item.type)}')">✕</button>
     </div>`).join('');
 }
-
 async function addMaster() {
   const type=document.getElementById('new-type').value.trim(), amount=parseInt(document.getElementById('new-amount').value), desc=document.getElementById('new-desc').value.trim();
   if (!type||!amount) { toast('種別名と金額は必須です',true); return; }
@@ -648,7 +751,6 @@ function applyHomeStats(today,thisM,prevM) {
     document.getElementById('month-progress').style.width=Math.min(Math.round(thisM.totalSales/prevM.totalSales*100),130)+'%';
   } else { document.getElementById('kpi-month-diff').textContent='先月比なし'; }
 }
-
 function applyTodayHistory(records) {
   const now=new Date(), tk=`${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
   const recs=records.filter(r=>r.date===tk);
@@ -662,7 +764,6 @@ function applyTodayHistory(records) {
       <button class="db" onclick="deleteSale(${r.id},'今日')">✕</button>
     </div>`).join('');
 }
-
 async function loadHomeChart() {
   const now=new Date(), y=now.getFullYear(), m=now.getMonth()+1;
   try {
@@ -683,7 +784,6 @@ async function loadHomeChart() {
     });
   } catch(e){}
 }
-
 async function refreshHome() {
   try {
     const now=new Date(), y=now.getFullYear(), m=now.getMonth()+1, pm=m===1?12:m-1, py=m===1?y-1:y;
@@ -692,13 +792,11 @@ async function refreshHome() {
     loadHomeChart();
   } catch(e){}
 }
-
 async function quickAdd(type,amount) {
   const r=await POST('/api/addSale',{type,amount});
   if (r.success) { toast(`${type} ${fmt(amount)}`); refreshHome(); if(curPage==='ledger') loadCurrentLedger(); }
   else toast(r.message,true);
 }
-
 async function addCustomSale() {
   const type=document.getElementById('custom-type').value, amount=parseInt(document.getElementById('custom-amount').value);
   if (!type) { toast('種別を選択してください',true); return; }
@@ -713,8 +811,6 @@ async function addCustomSale() {
 // ===== 台帳 =====
 function updateLedgerLabel() { document.getElementById('ledger-month-label').textContent=`${ledgerYear}年${ledgerMonth}月`; }
 function changeLedgerMonth(d) { ledgerMonth+=d; if(ledgerMonth>12){ledgerMonth=1;ledgerYear++;} if(ledgerMonth<1){ledgerMonth=12;ledgerYear--;} updateLedgerLabel(); loadLedger(); }
-
-// 台帳タブ切替
 function switchLedger(v) {
   ledgerView=v;
   ['year','month','day'].forEach(t => {
@@ -728,8 +824,6 @@ function loadCurrentLedger() {
   if (ledgerView==='year')  loadLedgerYear();
   if (ledgerView==='day')   loadLedgerDay();
 }
-
-// 台帳 年別
 function buildLedgerYearSelector() {
   const now=new Date().getFullYear();
   document.getElementById('ledger-year-selector').innerHTML=
@@ -765,16 +859,13 @@ async function loadLedgerYear() {
     </table>`;
   } catch(e) { document.getElementById('ledger-year-table').innerHTML='<div style="padding:18px;text-align:center;color:var(--neg);">取得エラー</div>'; }
 }
-
-// 台帳 日別
 function updateLedgerDayLabel() {
   const d=ledgerDayDate, dw=['日','月','火','水','木','金','土'];
   document.getElementById('ledger-day-label').textContent=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${dw[d.getDay()]}）`;
 }
 function changeLedgerDay(delta) {
   ledgerDayDate=new Date(ledgerDayDate.getTime()+delta*86400000);
-  updateLedgerDayLabel();
-  loadLedgerDay();
+  updateLedgerDayLabel(); loadLedgerDay();
 }
 async function loadLedgerDay() {
   const y=ledgerDayDate.getFullYear(), m=ledgerDayDate.getMonth()+1, d=ledgerDayDate.getDate();
@@ -786,27 +877,14 @@ async function loadLedgerDay() {
     document.getElementById('ledd-count').textContent=s.totalCount+'件';
     document.getElementById('ledd-shinki').textContent=fmt(s.shinkiSales)+'（'+s.shinkiCount+'件）';
     document.getElementById('ledd-joren').textContent=fmt(s.jorenSales)+'（'+s.jorenCount+'件）';
-    if (!data.records.length) {
-      document.getElementById('ledger-day-table').innerHTML='<div style="padding:20px;text-align:center;color:var(--sub2);">この日の記録はありません</div>';
-      return;
-    }
+    if (!data.records.length) { document.getElementById('ledger-day-table').innerHTML='<div style="padding:20px;text-align:center;color:var(--sub2);">この日の記録はありません</div>'; return; }
     const dateStr=`${y}/${m}/${d}`;
-    let rowIdx=0;
-    let html='<table class="ltbl"><thead><tr><th>時刻</th><th>種別</th><th style="text-align:right;">金額</th><th style="text-align:right;"></th></tr></thead><tbody>';
+    let rowIdx=0, html='<table class="ltbl"><thead><tr><th>時刻</th><th>種別</th><th style="text-align:right;">金額</th><th style="text-align:right;"></th></tr></thead><tbody>';
     data.records.forEach(r=>{
       const cls=rowIdx%2===0?'row-even':'row-odd'; rowIdx++;
-      html+=`<tr class="${cls}">
-        <td style="color:var(--sub2);font-size:13px;">${r.time}</td>
-        <td><span class="badge ${r.type==='新規'?'bs':r.type==='常連'?'bj':'bo'}">${esc(r.type)}</span></td>
-        <td class="num">${fmt(r.amount)}</td>
-        <td style="text-align:right;">
-          <button class="ib" onclick="openEditSale(${r.id},'${esc(r.type)}',${r.amount})" style="margin-right:4px;">編集</button>
-          <button class="db" onclick="deleteSaleFromLedgerDay(${r.id},'${dateStr}')">✕</button>
-        </td>
-      </tr>`;
+      html+=`<tr class="${cls}"><td style="color:var(--sub2);font-size:13px;">${r.time}</td><td><span class="badge ${r.type==='新規'?'bs':r.type==='常連'?'bj':'bo'}">${esc(r.type)}</span></td><td class="num">${fmt(r.amount)}</td><td style="text-align:right;"><button class="ib" onclick="openEditSale(${r.id},'${esc(r.type)}',${r.amount})" style="margin-right:4px;">編集</button><button class="db" onclick="deleteSaleFromLedgerDay(${r.id},'${dateStr}')">✕</button></td></tr>`;
     });
-    html+=`<tr class="row-total"><td colspan="2">合計</td><td class="num">${fmt(s.totalSales)}</td><td></td></tr>`;
-    html+='</tbody></table>';
+    html+=`<tr class="row-total"><td colspan="2">合計</td><td class="num">${fmt(s.totalSales)}</td><td></td></tr></tbody></table>`;
     document.getElementById('ledger-day-table').innerHTML=html;
   } catch(e) { document.getElementById('ledger-day-table').innerHTML='<div style="padding:18px;text-align:center;color:var(--neg);">取得エラー</div>'; }
 }
@@ -815,7 +893,6 @@ async function deleteSaleFromLedgerDay(id,dateStr) {
   const r=await DEL('/api/deleteSale/'+id);
   if (r.success) { toast('削除しました'); refreshHome(); loadLedgerDay(); } else toast(r.message,true);
 }
-
 async function loadLedger() {
   document.getElementById('ledger-table').innerHTML='<span class="spin"></span>';
   try {
@@ -827,37 +904,26 @@ async function loadLedger() {
     if (!data.records.length) { document.getElementById('ledger-table').innerHTML='<div style="padding:20px;text-align:center;color:var(--sub2);">この月の記録はありません</div>'; return; }
     const groups={};
     data.records.forEach(r=>{(groups[r.date]=groups[r.date]||[]).push(r);});
-    let rowIdx=0;
-    let html='<table class="ltbl"><thead><tr><th>時刻</th><th>種別</th><th style="text-align:right;">金額</th><th style="text-align:right;"></th></tr></thead><tbody>';
+    let rowIdx=0, html='<table class="ltbl"><thead><tr><th>時刻</th><th>種別</th><th style="text-align:right;">金額</th><th style="text-align:right;"></th></tr></thead><tbody>';
     Object.entries(groups).forEach(([date,items])=>{
       const dayTotal=items.reduce((a,r)=>a+r.amount,0);
       html+=`<tr class="group-hd"><td colspan="3">${date}　合計 ${fmt(dayTotal)}（${items.length}件）</td><td></td></tr>`;
       items.forEach(r=>{
         const cls=rowIdx%2===0?'row-even':'row-odd'; rowIdx++;
-        html+=`<tr class="${cls}">
-          <td style="color:var(--sub2);font-size:13px;">${r.time}</td>
-          <td><span class="badge ${r.type==='新規'?'bs':r.type==='常連'?'bj':'bo'}">${esc(r.type)}</span></td>
-          <td class="num">${fmt(r.amount)}</td>
-          <td style="text-align:right;">
-            <button class="ib" onclick="openEditSale(${r.id},'${esc(r.type)}',${r.amount})" style="margin-right:4px;">編集</button>
-            <button class="db" onclick="deleteSaleFromLedger(${r.id},'${date}')">✕</button>
-          </td>
-        </tr>`;
+        html+=`<tr class="${cls}"><td style="color:var(--sub2);font-size:13px;">${r.time}</td><td><span class="badge ${r.type==='新規'?'bs':r.type==='常連'?'bj':'bo'}">${esc(r.type)}</span></td><td class="num">${fmt(r.amount)}</td><td style="text-align:right;"><button class="ib" onclick="openEditSale(${r.id},'${esc(r.type)}',${r.amount})" style="margin-right:4px;">編集</button><button class="db" onclick="deleteSaleFromLedger(${r.id},'${date}')">✕</button></td></tr>`;
       });
     });
-    html+=`<tr class="row-total"><td colspan="2" style="font-size:13px;">合計</td><td class="num">${fmt(s.totalSales)}</td><td></td></tr>`;
-    html+='</tbody></table>';
+    html+=`<tr class="row-total"><td colspan="2" style="font-size:13px;">合計</td><td class="num">${fmt(s.totalSales)}</td><td></td></tr></tbody></table>`;
     document.getElementById('ledger-table').innerHTML=html;
   } catch(e) { document.getElementById('ledger-table').innerHTML='<div style="padding:18px;text-align:center;color:var(--neg);">取得エラー</div>'; }
 }
-
 async function deleteSaleFromLedger(id,dateStr) {
   if (!confirm(`${dateStr}の売上を削除しますか？`)) return;
   const r=await DEL('/api/deleteSale/'+id);
   if (r.success) { toast('削除しました'); refreshHome(); loadLedger(); } else toast(r.message,true);
 }
 
-// ===== 共通 =====
+// ===== 共通編集/削除 =====
 function openEditSale(id,type,amount) {
   document.getElementById('edit-id').value=id; document.getElementById('edit-type').value=type; document.getElementById('edit-amount').value=amount;
   openModal('edit-modal');
@@ -879,7 +945,6 @@ async function deleteSale(id,dateStr) {
 // ===== 月別集計 =====
 function updateStatsLabel() { document.getElementById('stats-month-label').textContent=`${statsYear}年${statsMonth}月`; }
 function changeStatsMonth(d) { statsMonth+=d; if(statsMonth>12){statsMonth=1;statsYear++;} if(statsMonth<1){statsMonth=12;statsYear--;} updateStatsLabel(); loadMonthStats(); }
-
 async function loadMonthStats() {
   const y=statsYear, m=statsMonth, pm=m===1?12:m-1, py=m===1?y-1:y;
   try {
@@ -895,17 +960,8 @@ async function loadMonthStats() {
     document.getElementById('m-days').textContent=(daily.days?.filter(d=>d.total>0).length||0)+'日';
     renderBarChart('daily-chart','cDaily',daily.days,m);
     loadCompareChart(y,m);
-    document.getElementById('month-table').innerHTML=`
-      <table class="tbl">
-        <thead><tr><th>種別</th><th>件数</th><th>売上金額</th></tr></thead>
-        <tbody>
-          <tr><td><span class="badge bs">新規</span></td><td>${cur.shinkiCount}件</td><td class="num">${fmt(cur.shinkiSales)}</td></tr>
-          <tr><td><span class="badge bj">常連</span></td><td>${cur.jorenCount}件</td><td class="num">${fmt(cur.jorenSales)}</td></tr>
-          ${cur.otherCount>0?`<tr><td><span class="badge bo">その他</span></td><td>${cur.otherCount}件</td><td class="num">${fmt(cur.otherSales)}</td></tr>`:''}
-          <tr class="tr-t"><td>合計</td><td>${cur.totalCount}件</td><td class="num">${fmt(cur.totalSales)}</td></tr>
-        </tbody>
-      </table>`;
-  } catch(e) { toast('集計取得エラー',true); }
+    document.getElementById('month-table').innerHTML=`<table class="tbl"><thead><tr><th>種別</th><th>件数</th><th>売上金額</th></tr></thead><tbody><tr><td><span class="badge bs">新規</span></td><td>${cur.shinkiCount}件</td><td class="num">${fmt(cur.shinkiSales)}</td></tr><tr><td><span class="badge bj">常連</span></td><td>${cur.jorenCount}件</td><td class="num">${fmt(cur.jorenSales)}</td></tr>${cur.otherCount>0?`<tr><td><span class="badge bo">その他</span></td><td>${cur.otherCount}件</td><td class="num">${fmt(cur.otherSales)}</td></tr>`:''}<tr class="tr-t"><td>合計</td><td>${cur.totalCount}件</td><td class="num">${fmt(cur.totalSales)}</td></tr></tbody></table>`;
+  } catch(e) { if(e.message!=='認証切れ') toast('集計取得エラー',true); }
 }
 
 function renderBarChart(canvasId, chartKey, days, month) {
@@ -914,77 +970,27 @@ function renderBarChart(canvasId, chartKey, days, month) {
   if (window[chartKey]) window[chartKey].destroy();
   const now = new Date(), todayD = now.getDate(), todayM = now.getMonth()+1;
   const maxVal = Math.max(...days.map(d=>d.total), 1);
-
   window[chartKey] = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: days.map(d => `${d.day}`),
-      datasets: [{
-        data: days.map(d => d.total),
-        backgroundColor: days.map(d => {
-          const isToday = (d.day === todayD && month === todayM);
-          if (isToday)    return '#0f172a';
-          if (d.total > 0) return '#4a6080';
-          return '#eaecf0';
-        }),
-        borderRadius: 5,
-        borderSkipped: false,
-        barPercentage: 0.72,
-        categoryPercentage: 0.9
+    type:'bar',
+    data:{
+      labels:days.map(d=>`${d.day}`),
+      datasets:[{
+        data:days.map(d=>d.total),
+        backgroundColor:days.map(d=>{ const isToday=(d.day===todayD&&month===todayM); return isToday?'#0f172a':d.total>0?'#4a6080':'#eaecf0'; }),
+        borderRadius:5,borderSkipped:false,barPercentage:0.72,categoryPercentage:0.9
       }]
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      layout: { padding: { top: 18, right: 4, left: 4, bottom: 0 } },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#0f172a',
-          padding: 12,
-          cornerRadius: 10,
-          titleFont: { size: 12, weight: '700' },
-          bodyFont: { size: 15, weight: '800' },
-          callbacks: {
-            title: t => `${month}月${t[0].label}日（${days[t[0].dataIndex].count||0}件）`,
-            label: c => c.raw > 0 ? ' ¥' + Number(c.raw).toLocaleString() : ' データなし'
-          }
-        },
-        /* 棒の上に金額ラベル */
-        datalabels: false
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:18,right:4,left:4,bottom:0}},
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:'#0f172a',padding:12,cornerRadius:10,titleFont:{size:12,weight:'700'},bodyFont:{size:15,weight:'800'},
+          callbacks:{title:t=>`${month}月${t[0].label}日（${days[t[0].dataIndex].count||0}件）`,label:c=>c.raw>0?' ¥'+Number(c.raw).toLocaleString():' データなし'}}
       },
-      scales: {
-        x: {
-          grid: { display: false },
-          border: { display: false },
-          ticks: {
-            font: { size: 10, weight: '500' },
-            color: ctx2 => {
-              const d = days[ctx2.index];
-              if (d && d.day === todayD && month === todayM) return '#0f172a';
-              return '#b0bac6';
-            },
-            maxRotation: 0,
-            callback: (val, i) => {
-              const d = days[i];
-              if (!d) return '';
-              if (d.day === 1 || d.day % 5 === 0 || d.day === days.length) return `${d.day}`;
-              return '';
-            }
-          }
-        },
-        y: {
-          beginAtZero: true,
-          suggestedMax: maxVal * 1.18,
-          grid: { color: 'rgba(0,0,0,0.06)', lineWidth: 1 },
-          border: { display: false, dash: [4, 4] },
-          ticks: {
-            font: { size: 10 },
-            color: '#b0bac6',
-            maxTicksLimit: 5,
-            callback: v => v === 0 ? '0' : fmtS(v)
-          }
-        }
+      scales:{
+        x:{grid:{display:false},border:{display:false},ticks:{font:{size:10,weight:'500'},color:ctx2=>{const d=days[ctx2.index];if(d&&d.day===todayD&&month===todayM)return'#0f172a';return'#b0bac6';},maxRotation:0,callback:(val,i)=>{const d=days[i];if(!d)return'';if(d.day===1||d.day%5===0||d.day===days.length)return`${d.day}`;return '';}}},
+        y:{beginAtZero:true,suggestedMax:maxVal*1.18,grid:{color:'rgba(0,0,0,0.06)',lineWidth:1},border:{display:false,dash:[4,4]},ticks:{font:{size:10},color:'#b0bac6',maxTicksLimit:5,callback:v=>v===0?'0':fmtS(v)}}
       }
     }
   });
@@ -995,43 +1001,18 @@ async function loadCompareChart(y,m) {
   const results=await Promise.all(months.map(({y,m})=>GET('/api/getMonthStats',{year:y,month:m})));
   const ctx=document.getElementById('compare-chart').getContext('2d');
   if (cCompare) cCompare.destroy();
-  cCompare = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: months.map(({m},i) => i===months.length-1 ? `${m}月\n（今月）` : `${m}月`),
-      datasets: [{
-        data: results.map(r => r.totalSales),
-        backgroundColor: months.map((_,i) => i===months.length-1 ? '#0f172a' : '#b8c4d0'),
-        borderRadius: 10,
-        borderSkipped: false,
-        barPercentage: 0.55
-      }]
+  cCompare=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:months.map(({m},i)=>i===months.length-1?`${m}月\n（今月）`:`${m}月`),
+      datasets:[{data:results.map(r=>r.totalSales),backgroundColor:months.map((_,i)=>i===months.length-1?'#0f172a':'#b8c4d0'),borderRadius:10,borderSkipped:false,barPercentage:0.55}]
     },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      layout: { padding: { top: 20 } },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#0f172a', padding: 12, cornerRadius: 10,
-          titleFont: { size: 12, weight: '700' }, bodyFont: { size: 15, weight: '800' },
-          callbacks: {
-            title: t => `${months[t[0].dataIndex].m}月`,
-            label: c => ' ¥' + Number(c.raw).toLocaleString() + '（' + results[t[0].dataIndex]?.totalCount + '件）',
-            afterLabel: (t) => {
-              const cur = results[t.dataIndex]?.totalSales||0;
-              const prev = results[t.dataIndex-1]?.totalSales;
-              if (!prev || t.dataIndex===0) return '';
-              const pct = Math.round((cur-prev)/prev*100);
-              return (pct>=0?'▲':'▼') + Math.abs(pct) + '% 前月比';
-            }
-          }
-        }
-      },
-      scales: {
-        x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 13, weight: '700' }, color: '#3a4658' } },
-        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, border: { display: false }, ticks: { font: { size: 10 }, color: '#a0aab4', maxTicksLimit: 4, callback: v => v===0?'0':fmtS(v) } }
-      }
+    options:{
+      responsive:true,maintainAspectRatio:false,layout:{padding:{top:20}},
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f172a',padding:12,cornerRadius:10,titleFont:{size:12,weight:'700'},bodyFont:{size:15,weight:'800'},
+        callbacks:{title:t=>`${months[t[0].dataIndex].m}月`,label:c=>' ¥'+Number(c.raw).toLocaleString()+'（'+results[c.dataIndex]?.totalCount+'件）',
+          afterLabel:t=>{const cur=results[t.dataIndex]?.totalSales||0,prev=results[t.dataIndex-1]?.totalSales;if(!prev||t.dataIndex===0)return'';const pct=Math.round((cur-prev)/prev*100);return(pct>=0?'▲':'▼')+Math.abs(pct)+'% 前月比';}}}},
+      scales:{x:{grid:{display:false},border:{display:false},ticks:{font:{size:13,weight:'700'},color:'#3a4658'}},y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.05)'},border:{display:false},ticks:{font:{size:10},color:'#a0aab4',maxTicksLimit:4,callback:v=>v===0?'0':fmtS(v)}}}
     }
   });
 }
@@ -1039,7 +1020,6 @@ async function loadCompareChart(y,m) {
 // ===== 日別ビュー =====
 function updateDayLabel() { document.getElementById('day-month-label').textContent=`${dayYear}年${dayMonth}月`; }
 function changeDayMonth(d) { dayMonth+=d; if(dayMonth>12){dayMonth=1;dayYear++;} if(dayMonth<1){dayMonth=12;dayYear--;} updateDayLabel(); loadDayStats(); }
-
 async function loadDayStats() {
   const el=document.getElementById('day-table'); el.innerHTML='<span class="spin"></span>';
   try {
@@ -1048,13 +1028,7 @@ async function loadDayStats() {
     const active=(data.days||[]).filter(d=>d.total>0);
     if (!active.length) { el.innerHTML='<div style="padding:18px;text-align:center;color:var(--sub2);">この月の記録はありません</div>'; return; }
     const totalSales=active.reduce((a,d)=>a+d.total,0), totalCount=active.reduce((a,d)=>a+d.count,0);
-    el.innerHTML=`<table class="tbl">
-      <thead><tr><th>日付</th><th class="r">件数</th><th class="r">新規</th><th class="r">常連</th><th class="r">合計</th></tr></thead>
-      <tbody>
-        ${active.map(d=>`<tr><td style="font-weight:700;">${dayMonth}/${d.day}</td><td class="r" style="color:var(--sub);">${d.count}件</td><td class="r">${d.shinki>0?fmt(d.shinki):'—'}</td><td class="r">${d.joren>0?fmt(d.joren):'—'}</td><td class="num">${fmt(d.total)}</td></tr>`).join('')}
-        <tr class="tr-t"><td>合計</td><td class="r">${totalCount}件</td><td></td><td></td><td class="num">${fmt(totalSales)}</td></tr>
-      </tbody>
-    </table>`;
+    el.innerHTML=`<table class="tbl"><thead><tr><th>日付</th><th class="r">件数</th><th class="r">新規</th><th class="r">常連</th><th class="r">合計</th></tr></thead><tbody>${active.map(d=>`<tr><td style="font-weight:700;">${dayMonth}/${d.day}</td><td class="r" style="color:var(--sub);">${d.count}件</td><td class="r">${d.shinki>0?fmt(d.shinki):'—'}</td><td class="r">${d.joren>0?fmt(d.joren):'—'}</td><td class="num">${fmt(d.total)}</td></tr>`).join('')}<tr class="tr-t"><td>合計</td><td class="r">${totalCount}件</td><td></td><td></td><td class="num">${fmt(totalSales)}</td></tr></tbody></table>`;
   } catch(e) { el.innerHTML='<div style="padding:16px;text-align:center;color:var(--neg);">取得エラー</div>'; }
 }
 
@@ -1075,26 +1049,11 @@ async function loadYearStats() {
     if (cYear) cYear.destroy();
     cYear=new Chart(ctx,{
       type:'bar',
-      data:{
-        labels:Array.from({length:12},(_,i)=>`${i+1}月`),
-        datasets:[
-          {label:'新規',data:results.map(r=>r.shinkiSales),backgroundColor:'#0f172a',borderRadius:3,borderSkipped:false,stack:'s'},
-          {label:'常連',data:results.map(r=>r.jorenSales),backgroundColor:'#7c8ba0',borderRadius:3,borderSkipped:false,stack:'s'},
-          {label:'その他',data:results.map(r=>r.otherSales),backgroundColor:'#c8d0dc',borderRadius:3,borderSkipped:false,stack:'s'}
-        ]
-      },
-      options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{position:'bottom',labels:{font:{size:11},usePointStyle:true,pointStyle:'circle',boxWidth:8,padding:14}},tooltip:{backgroundColor:'#0f172a',callbacks:{label:c=>`${c.dataset.label}: ¥${Number(c.raw).toLocaleString()}`}}},
-        scales:{x:{grid:{display:false},border:{display:false},ticks:{font:{size:10},color:'#6e7a8a'},stacked:true},y:{stacked:true,beginAtZero:true,grid:{color:'rgba(0,0,0,0.04)'},border:{display:false},ticks:{font:{size:9},color:'#a0aab4',callback:v=>v===0?'0':fmtS(v)}}}}
+      data:{labels:Array.from({length:12},(_,i)=>`${i+1}月`),datasets:[{label:'新規',data:results.map(r=>r.shinkiSales),backgroundColor:'#0f172a',borderRadius:3,borderSkipped:false,stack:'s'},{label:'常連',data:results.map(r=>r.jorenSales),backgroundColor:'#7c8ba0',borderRadius:3,borderSkipped:false,stack:'s'},{label:'その他',data:results.map(r=>r.otherSales),backgroundColor:'#c8d0dc',borderRadius:3,borderSkipped:false,stack:'s'}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},usePointStyle:true,pointStyle:'circle',boxWidth:8,padding:14}},tooltip:{backgroundColor:'#0f172a',callbacks:{label:c=>`${c.dataset.label}: ¥${Number(c.raw).toLocaleString()}`}}},scales:{x:{grid:{display:false},border:{display:false},ticks:{font:{size:10},color:'#6e7a8a'},stacked:true},y:{stacked:true,beginAtZero:true,grid:{color:'rgba(0,0,0,0.04)'},border:{display:false},ticks:{font:{size:9},color:'#a0aab4',callback:v=>v===0?'0':fmtS(v)}}}}
     });
-    document.getElementById('year-table').innerHTML=`<table class="tbl">
-      <thead><tr><th>月</th><th class="r">件数</th><th class="r">新規</th><th class="r">常連</th><th class="r">合計</th></tr></thead>
-      <tbody>
-        ${results.map((r,i)=>r.totalCount>0?`<tr><td style="font-weight:700;">${i+1}月</td><td class="r" style="color:var(--sub);">${r.totalCount}件</td><td class="r">${r.shinkiSales>0?fmt(r.shinkiSales):'—'}</td><td class="r">${r.jorenSales>0?fmt(r.jorenSales):'—'}</td><td class="num">${fmt(r.totalSales)}</td></tr>`:'').join('')}
-        <tr class="tr-t"><td>合計</td><td class="r">${totalCount}件</td><td class="r">${fmt(shinkiSales)}</td><td class="r">${fmt(jorenSales)}</td><td class="num">${fmt(totalSales)}</td></tr>
-      </tbody>
-    </table>`;
-  } catch(e) { toast('年別集計エラー',true); }
+    document.getElementById('year-table').innerHTML=`<table class="tbl"><thead><tr><th>月</th><th class="r">件数</th><th class="r">新規</th><th class="r">常連</th><th class="r">合計</th></tr></thead><tbody>${results.map((r,i)=>r.totalCount>0?`<tr><td style="font-weight:700;">${i+1}月</td><td class="r" style="color:var(--sub);">${r.totalCount}件</td><td class="r">${r.shinkiSales>0?fmt(r.shinkiSales):'—'}</td><td class="r">${r.jorenSales>0?fmt(r.jorenSales):'—'}</td><td class="num">${fmt(r.totalSales)}</td></tr>`:'').join('')}<tr class="tr-t"><td>合計</td><td class="r">${totalCount}件</td><td class="r">${fmt(shinkiSales)}</td><td class="r">${fmt(jorenSales)}</td><td class="num">${fmt(totalSales)}</td></tr></tbody></table>`;
+  } catch(e) { if(e.message!=='認証切れ') toast('年別集計エラー',true); }
 }
 
 // ===== 経理 =====
@@ -1106,42 +1065,49 @@ async function loadAccounting() {
     const s=d.summary;
     const groups={};d.records.forEach(r=>{(groups[r.date]=groups[r.date]||[]).push(r);});
     document.getElementById('acc-report').innerHTML=`
-      <div class="card cp gap" style="text-align:center;">
-        <div style="font-size:18px;font-weight:900;color:var(--navy);letter-spacing:-.4px;">あまと整体院 月次レポート</div>
-        <div style="color:var(--sub);margin-top:4px;font-size:13px;">${d.year}年${d.month}月</div>
-      </div>
-      <div class="card gap"><table class="tbl">
-        <thead><tr><th>種別</th><th>件数</th><th class="r">売上金額</th></tr></thead>
-        <tbody>
-          <tr><td><span class="badge bs">新規</span></td><td>${s.shinkiCount}件</td><td class="num">${fmt(s.shinkiSales)}</td></tr>
-          <tr><td><span class="badge bj">常連</span></td><td>${s.jorenCount}件</td><td class="num">${fmt(s.jorenSales)}</td></tr>
-          ${s.otherCount>0?`<tr><td><span class="badge bo">その他</span></td><td>${s.otherCount}件</td><td class="num">${fmt(s.otherSales)}</td></tr>`:''}
-          <tr class="tr-t"><td>合計</td><td>${s.totalCount}件</td><td class="num">${fmt(s.totalSales)}</td></tr>
-        </tbody>
-      </table></div>
-      <div class="card gap">
-        <div style="padding:16px 16px 0;"><div class="stitle">日別明細</div></div>
-        <div style="padding:0 16px 12px;">
-          ${Object.entries(groups).map(([date,items])=>`
-            <div style="margin-bottom:14px;">
-              <div style="font-size:12px;font-weight:700;color:var(--sub);padding:7px 0 5px;border-bottom:1px solid var(--border);">
-                ${date}　<span style="color:var(--navy);font-weight:900;">${fmt(items.reduce((a,r)=>a+r.amount,0))}</span>　<span style="color:var(--sub2);">${items.length}件</span>
-              </div>
-              ${items.map(r=>`<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid #f8f9fb;">
-                <span style="font-size:12px;color:var(--sub2);width:36px;">${r.time}</span>
-                <span class="badge ${r.type==='新規'?'bs':r.type==='常連'?'bj':'bo'}">${esc(r.type)}</span>
-                <span style="font-weight:800;font-size:15px;flex:1;text-align:right;">${fmt(r.amount)}</span>
-              </div>`).join('')}
-            </div>`).join('')}
-          ${!d.records.length?'<div style="text-align:center;color:var(--sub2);padding:20px 0;">この月のデータがありません</div>':''}
-        </div>
-      </div>`;
-  } catch(e) { toast('レポート取得エラー',true); }
+      <div class="card cp gap" style="text-align:center;"><div style="font-size:18px;font-weight:900;color:var(--navy);letter-spacing:-.4px;">あまと整体院 月次レポート</div><div style="color:var(--sub);margin-top:4px;font-size:13px;">${d.year}年${d.month}月</div></div>
+      <div class="card gap"><table class="tbl"><thead><tr><th>種別</th><th>件数</th><th class="r">売上金額</th></tr></thead><tbody><tr><td><span class="badge bs">新規</span></td><td>${s.shinkiCount}件</td><td class="num">${fmt(s.shinkiSales)}</td></tr><tr><td><span class="badge bj">常連</span></td><td>${s.jorenCount}件</td><td class="num">${fmt(s.jorenSales)}</td></tr>${s.otherCount>0?`<tr><td><span class="badge bo">その他</span></td><td>${s.otherCount}件</td><td class="num">${fmt(s.otherSales)}</td></tr>`:''}<tr class="tr-t"><td>合計</td><td>${s.totalCount}件</td><td class="num">${fmt(s.totalSales)}</td></tr></tbody></table></div>
+      <div class="card gap"><div style="padding:16px 16px 0;"><div class="stitle">日別明細</div></div><div style="padding:0 16px 12px;">${Object.entries(groups).map(([date,items])=>`<div style="margin-bottom:14px;"><div style="font-size:12px;font-weight:700;color:var(--sub);padding:7px 0 5px;border-bottom:1px solid var(--border);">${date}　<span style="color:var(--navy);font-weight:900;">${fmt(items.reduce((a,r)=>a+r.amount,0))}</span>　<span style="color:var(--sub2);">${items.length}件</span></div>${items.map(r=>`<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid #f8f9fb;"><span style="font-size:12px;color:var(--sub2);width:36px;">${r.time}</span><span class="badge ${r.type==='新規'?'bs':r.type==='常連'?'bj':'bo'}">${esc(r.type)}</span><span style="font-weight:800;font-size:15px;flex:1;text-align:right;">${fmt(r.amount)}</span></div>`).join('')}</div>`).join('')}${!d.records.length?'<div style="text-align:center;color:var(--sub2);padding:20px 0;">この月のデータがありません</div>':''}</div></div>`;
+  } catch(e) { if(e.message!=='認証切れ') toast('レポート取得エラー',true); }
 }
-function downloadCsv() { window.open(API+`/api/getCsv?year=${document.getElementById('acc-year').value}&month=${document.getElementById('acc-month').value}`); }
-function downloadCsvFrom() { window.open(API+`/api/getCsv?year=${document.getElementById('csv-year').value}&month=${document.getElementById('csv-month').value}`); }
+function downloadCsv() { window.open(API+`/api/getCsv?year=${document.getElementById('acc-year').value}&month=${document.getElementById('acc-month').value}&token=${authToken}`); }
+function downloadCsvFrom() { window.open(API+`/api/getCsv?year=${document.getElementById('csv-year').value}&month=${document.getElementById('csv-month').value}&token=${authToken}`); }
+function downloadCsvAll() { window.open(API+`/api/getCsv?token=${authToken}`); }
 
-init();
+// ===== CSVインポート =====
+const importArea = document.getElementById('import-area');
+importArea.addEventListener('dragover', e => { e.preventDefault(); importArea.classList.add('dragover'); });
+importArea.addEventListener('dragleave', () => importArea.classList.remove('dragover'));
+importArea.addEventListener('drop', e => { e.preventDefault(); importArea.classList.remove('dragover'); const f=e.dataTransfer.files[0]; if(f) handleCsvFile(f); });
+
+async function handleCsvFile(file) {
+  if (!file) return;
+  const resultEl = document.getElementById('import-result');
+  resultEl.className = 'import-result';
+  resultEl.textContent = 'インポート中…';
+  resultEl.classList.add('ok');
+  const form = new FormData();
+  form.append('file', file);
+  try {
+    const r = await fetch(API+'/api/importCsv', { method:'POST', headers:{ 'Authorization':`Bearer ${authToken}` }, body: form });
+    const data = await r.json();
+    if (data.success) {
+      resultEl.className = 'import-result ok';
+      resultEl.textContent = data.message;
+      refreshHome();
+    } else {
+      resultEl.className = 'import-result err';
+      resultEl.textContent = data.message;
+    }
+  } catch(e) {
+    resultEl.className = 'import-result err';
+    resultEl.textContent = 'インポートに失敗しました';
+  }
+  document.getElementById('csv-file').value = '';
+}
+
+// CSV経由のダウンロードはtokenをクエリに渡す（GETリクエストのためヘッダー不可）
+// ※ index.js 側でもクエリからtokenを受け取れるよう対応済み
 </script>
 </body>
 </html>
