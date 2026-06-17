@@ -7,166 +7,184 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 :root {
-  --bg:#f0f4f8;
-  --card:#ffffff;
-  --border:#e2e8f0;
-  --text:#1a202c;
-  --sub:#64748b;
-  --sub2:#94a3b8;
-  --blue:#2563eb;
-  --blue-l:#eff6ff;
-  --blue-m:#bfdbfe;
-  --green:#16a34a;
-  --green-l:#f0fdf4;
-  --red:#dc2626;
-  --red-l:#fef2f2;
-  --orange:#ea580c;
-  --orange-l:#fff7ed;
-  --nav-h:64px;
-  --safe-b:env(safe-area-inset-bottom,0px);
-  --radius:16px;
+  --bg: #f5f7fa;
+  --card: #ffffff;
+  --text: #0d1117;
+  --sub: #6e7a8a;
+  --sub2: #a0aab4;
+  --border: #eaecf0;
+  --navy: #0f172a;
+  --navy-m: #1e293b;
+  --navy-l: #f1f5f9;
+  --indigo: #4f46e5;
+  --indigo-l: #eef2ff;
+  --pos: #047857;
+  --pos-l: #ecfdf5;
+  --neg: #b91c1c;
+  --neg-l: #fef2f2;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05);
+  --shadow: 0 4px 12px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.05);
+  --nav-h: 60px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --radius: 14px;
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;}
-button{font-family:inherit;cursor:pointer;}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+button { font-family: inherit; cursor: pointer; }
 
-#nav{position:fixed;bottom:0;left:0;right:0;height:calc(var(--nav-h) + var(--safe-b));background:#fff;border-top:1.5px solid var(--border);display:flex;align-items:stretch;z-index:100;}
-.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:none;background:none;color:var(--sub2);font-size:10px;font-weight:600;padding-bottom:var(--safe-b);letter-spacing:.3px;}
-.nav-btn.active{color:var(--blue);}
+/* ナビ */
+#nav { position: fixed; bottom: 0; left: 0; right: 0; height: calc(var(--nav-h) + var(--safe-b)); background: #fff; border-top: 1px solid var(--border); display: flex; align-items: stretch; z-index: 100; }
+.nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: none; background: none; color: var(--sub2); font-size: 10px; font-weight: 600; padding-bottom: var(--safe-b); letter-spacing: .3px; }
+.nav-btn.active { color: var(--navy); }
+.nav-btn.active svg { stroke: var(--navy); }
 
-.page{display:none;padding-bottom:calc(var(--nav-h) + var(--safe-b) + 20px);}
-.page.active{display:block;}
-.page-header{background:#fff;border-bottom:1.5px solid var(--border);padding:20px 20px 14px;position:sticky;top:0;z-index:50;}
-.page-header h1{font-size:20px;font-weight:800;letter-spacing:-.3px;}
-.page-header .sub{font-size:13px;color:var(--sub);margin-top:3px;}
-.wrap{padding:20px 16px;}
-.card{background:var(--card);border-radius:var(--radius);border:1.5px solid var(--border);}
-.card-pad{padding:20px;}
-.gap{margin-bottom:16px;}
+/* ページ */
+.page { display: none; padding-bottom: calc(var(--nav-h) + var(--safe-b) + 24px); }
+.page.active { display: block; }
+.page-header { background: #fff; border-bottom: 1px solid var(--border); padding: 18px 20px 14px; position: sticky; top: 0; z-index: 50; }
+.page-header h1 { font-size: 19px; font-weight: 800; letter-spacing: -.4px; color: var(--navy); }
+.page-header .sub { font-size: 12px; color: var(--sub); margin-top: 2px; }
+.wrap { padding: 20px 16px; }
+.card { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+.card-pad { padding: 20px; }
+.gap { margin-bottom: 14px; }
 
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:12px;font-weight:700;font-size:15px;padding:14px 22px;transition:opacity .15s,transform .1s;letter-spacing:-.2px;}
-.btn:active{transform:scale(.97);opacity:.85;}
-.btn-primary{background:var(--blue);color:#fff;}
-.btn-secondary{background:var(--blue-l);color:var(--blue);border:1.5px solid var(--blue-m);}
-.btn-danger{background:var(--red-l);color:var(--red);border:1.5px solid #fecaca;}
-.btn-sm{padding:8px 14px;font-size:13px;border-radius:10px;}
-.btn-full{width:100%;}
-.btn:disabled{opacity:.5;pointer-events:none;}
+/* ボタン */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: none; border-radius: 10px; font-weight: 700; font-size: 15px; padding: 14px 22px; transition: filter .15s, transform .1s; letter-spacing: -.2px; }
+.btn:active { transform: scale(.97); filter: brightness(.93); }
+.btn-primary { background: var(--navy); color: #fff; }
+.btn-secondary { background: var(--navy-l); color: var(--navy); border: 1px solid #dde3ec; }
+.btn-danger { background: var(--neg-l); color: var(--neg); border: 1px solid #fecaca; }
+.btn-sm { padding: 8px 14px; font-size: 13px; border-radius: 8px; }
+.btn-full { width: 100%; }
+.btn:disabled { opacity: .45; pointer-events: none; }
 
-.form-group{margin-bottom:14px;}
-.form-label{display:block;font-size:12px;font-weight:700;color:var(--sub);margin-bottom:6px;letter-spacing:.3px;text-transform:uppercase;}
-.form-control{width:100%;padding:14px 16px;border:1.5px solid var(--border);border-radius:12px;font-size:16px;font-family:inherit;background:#fff;color:var(--text);transition:border-color .15s;}
-.form-control:focus{outline:none;border-color:var(--blue);}
-select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;}
+/* フォーム */
+.form-group { margin-bottom: 14px; }
+.form-label { display: block; font-size: 11px; font-weight: 700; color: var(--sub); margin-bottom: 5px; letter-spacing: .4px; text-transform: uppercase; }
+.form-control { width: 100%; padding: 13px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 16px; font-family: inherit; background: #fff; color: var(--text); transition: border-color .15s; }
+.form-control:focus { outline: none; border-color: var(--navy); }
+select.form-control { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236e7a8a' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
 
-.kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
-.kpi-card{background:#fff;border-radius:var(--radius);border:1.5px solid var(--border);padding:18px;}
-.kpi-card.big{grid-column:span 2;background:var(--blue);border-color:var(--blue);}
-.kpi-label{font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--sub);text-transform:uppercase;margin-bottom:8px;}
-.kpi-card.big .kpi-label{color:rgba(255,255,255,.75);}
-.kpi-value{font-size:28px;font-weight:900;color:var(--text);letter-spacing:-1px;line-height:1;}
-.kpi-card.big .kpi-value{color:#fff;font-size:36px;}
-.kpi-sub{font-size:12px;color:var(--sub2);margin-top:6px;font-weight:500;}
-.kpi-card.big .kpi-sub{color:rgba(255,255,255,.75);}
-.kpi-card.green{background:var(--green-l);border-color:#bbf7d0;}
-.kpi-card.green .kpi-value{color:var(--green);}
-.kpi-card.orange{background:var(--orange-l);border-color:#fed7aa;}
-.kpi-card.orange .kpi-value{color:var(--orange);}
+/* KPI */
+.kpi-main { background: var(--navy); border-radius: var(--radius); padding: 22px; margin-bottom: 14px; box-shadow: var(--shadow); }
+.kpi-main-label { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.55); letter-spacing: .5px; text-transform: uppercase; margin-bottom: 10px; }
+.kpi-main-value { font-size: 42px; font-weight: 900; color: #fff; letter-spacing: -2px; line-height: 1; }
+.kpi-main-sub { font-size: 13px; color: rgba(255,255,255,.6); margin-top: 8px; font-weight: 500; }
+.kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.kpi-card { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 16px 18px; }
+.kpi-card-label { font-size: 11px; font-weight: 600; color: var(--sub); letter-spacing: .4px; text-transform: uppercase; margin-bottom: 8px; }
+.kpi-card-value { font-size: 24px; font-weight: 900; color: var(--text); letter-spacing: -1px; line-height: 1; }
+.kpi-card-sub { font-size: 12px; color: var(--sub2); margin-top: 5px; font-weight: 500; }
 
-.month-bar{background:#fff;border-radius:var(--radius);border:1.5px solid var(--border);padding:18px;margin-bottom:16px;}
-.month-bar-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
-.month-bar-amount{font-size:26px;font-weight:900;color:var(--text);letter-spacing:-1px;}
-.month-bar-label{font-size:12px;font-weight:700;color:var(--sub);margin-bottom:4px;}
-.tag{display:inline-flex;align-items:center;padding:4px 10px;border-radius:100px;font-size:12px;font-weight:700;}
-.tag-up{background:#dcfce7;color:#15803d;}
-.tag-down{background:#fee2e2;color:#b91c1c;}
-.tag-neutral{background:#f1f5f9;color:var(--sub);}
-.progress-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;}
-.progress-fill{height:100%;background:var(--blue);border-radius:4px;transition:width .5s cubic-bezier(.4,0,.2,1);}
+/* 今月バー */
+.month-card { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 18px 20px; margin-bottom: 14px; }
+.month-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+.month-card-label { font-size: 11px; font-weight: 600; color: var(--sub); letter-spacing: .4px; text-transform: uppercase; }
+.month-card-value { font-size: 28px; font-weight: 900; color: var(--text); letter-spacing: -1px; margin: 6px 0 4px; }
+.month-card-sub { font-size: 12px; color: var(--sub2); margin-bottom: 10px; }
+.progress-bar { height: 6px; background: #eef0f4; border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--navy); border-radius: 3px; transition: width .6s cubic-bezier(.4,0,.2,1); }
 
-.quick-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
-.quick-item{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;background:#fff;border:1.5px solid var(--border);border-radius:14px;}
-.quick-item.primary{background:var(--blue);border-color:var(--blue);}
-.quick-item.primary .qi-name,.quick-item.primary .qi-amt{color:#fff;}
-.qi-name{font-size:16px;font-weight:800;}
-.qi-amt{font-size:22px;font-weight:900;color:var(--sub);}
+/* タグ */
+.tag { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 100px; font-size: 11px; font-weight: 700; }
+.tag-up { background: var(--pos-l); color: var(--pos); }
+.tag-down { background: var(--neg-l); color: var(--neg); }
+.tag-flat { background: #f1f5f9; color: var(--sub); }
 
-.list-item{display:flex;align-items:center;gap:10px;padding:14px 0;border-bottom:1.5px solid var(--border);}
-.list-item:last-child{border-bottom:none;}
-.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:8px;font-size:12px;font-weight:700;flex-shrink:0;min-width:44px;justify-content:center;}
-.badge-shinki{background:#dbeafe;color:#1d4ed8;}
-.badge-joren{background:#f1f5f9;color:#475569;}
-.badge-other{background:#fef9c3;color:#854d0e;}
-.list-amount{font-size:17px;font-weight:800;flex:1;color:var(--text);}
-.list-time{font-size:12px;color:var(--sub2);font-weight:500;white-space:nowrap;}
-.icon-btn{background:none;border:1.5px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12px;color:var(--sub);font-weight:600;}
-.del-btn{background:none;border:none;color:var(--sub2);font-size:18px;padding:0 4px;line-height:1;}
+/* クイックボタン */
+.quick-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.quick-item { display: flex; align-items: center; justify-content: space-between; padding: 15px 18px; background: #fff; border: none; border-radius: var(--radius); box-shadow: var(--shadow-sm); text-align: left; }
+.quick-item.primary { background: var(--navy); }
+.quick-item .qi-name { font-size: 15px; font-weight: 700; color: var(--text); }
+.quick-item.primary .qi-name { color: #fff; }
+.quick-item .qi-amt { font-size: 20px; font-weight: 900; color: var(--sub); }
+.quick-item.primary .qi-amt { color: rgba(255,255,255,.85); }
 
-.month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
-.month-nav-label{font-size:19px;font-weight:900;color:var(--text);letter-spacing:-.3px;}
-.month-nav-btn{background:#fff;border:1.5px solid var(--border);color:var(--blue);border-radius:10px;padding:8px 16px;font-weight:700;font-size:14px;}
+/* リスト */
+.list-item { display: flex; align-items: center; gap: 10px; padding: 13px 0; border-bottom: 1px solid var(--border); }
+.list-item:last-child { border-bottom: none; }
+.badge { display: inline-flex; align-items: center; justify-content: center; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; flex-shrink: 0; min-width: 42px; }
+.badge-shinki { background: #e8eef8; color: #2452a0; }
+.badge-joren  { background: #f0f1f4; color: #4a5568; }
+.badge-other  { background: #f5f0e8; color: #7a5c1e; }
+.list-amount { font-size: 16px; font-weight: 800; flex: 1; color: var(--text); }
+.list-time { font-size: 12px; color: var(--sub2); white-space: nowrap; }
+.icon-btn { background: none; border: 1px solid var(--border); border-radius: 7px; padding: 5px 10px; font-size: 12px; color: var(--sub); font-weight: 600; }
+.del-btn { background: none; border: none; color: var(--sub2); font-size: 18px; padding: 0 4px; line-height: 1; }
 
-/* 売上タブ */
-.view-tabs{display:flex;background:#f1f5f9;border-radius:12px;padding:4px;margin-bottom:16px;}
-.view-tab{flex:1;padding:10px 0;text-align:center;font-size:13px;font-weight:700;color:var(--sub);border:none;background:none;border-radius:9px;transition:background .15s,color .15s;}
-.view-tab.active{background:#fff;color:var(--blue);box-shadow:0 1px 4px rgba(0,0,0,0.1);}
+/* 月ナビ */
+.month-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.month-nav-label { font-size: 18px; font-weight: 900; color: var(--navy); letter-spacing: -.4px; }
+.month-nav-btn { background: #fff; border: 1px solid var(--border); color: var(--navy); border-radius: 9px; padding: 8px 16px; font-weight: 700; font-size: 13px; box-shadow: var(--shadow-sm); }
 
-.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
-.stat-card{background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:14px;text-align:center;}
-.stat-val{font-size:18px;font-weight:900;color:var(--text);letter-spacing:-.5px;}
-.stat-lbl{font-size:10px;font-weight:700;color:var(--sub2);margin-top:4px;text-transform:uppercase;letter-spacing:.3px;}
+/* ビュータブ */
+.view-tabs { display: flex; background: #edf0f4; border-radius: 11px; padding: 3px; margin-bottom: 16px; }
+.view-tab { flex: 1; padding: 9px 0; text-align: center; font-size: 13px; font-weight: 700; color: var(--sub); border: none; background: none; border-radius: 9px; transition: background .15s, color .15s; }
+.view-tab.active { background: #fff; color: var(--navy); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
 
-.tbl{width:100%;border-collapse:collapse;font-size:14px;}
-.tbl th{background:#f8fafc;color:var(--sub);font-size:11px;font-weight:700;padding:10px 14px;text-align:left;border-bottom:1.5px solid var(--border);letter-spacing:.3px;text-transform:uppercase;}
-.tbl td{padding:13px 14px;border-bottom:1px solid #f1f5f9;font-size:14px;}
-.tbl tr:last-child td{border-bottom:none;}
-.tbl tr.total-row td{background:var(--blue-l);font-weight:800;color:var(--blue);border-top:1.5px solid var(--blue-m);}
-.tbl td.num{font-weight:700;text-align:right;}
-.tbl td.right{text-align:right;}
+/* 年選択 */
+.year-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.year-btn { padding: 10px 18px; background: #fff; border: 1px solid var(--border); border-radius: 10px; font-weight: 700; font-size: 14px; color: var(--sub); box-shadow: var(--shadow-sm); }
+.year-btn.active { background: var(--navy); border-color: var(--navy); color: #fff; }
 
-.chart-wrap{position:relative;height:200px;margin:10px 0 0;}
-.section-title{font-size:12px;font-weight:700;color:var(--sub);letter-spacing:.5px;text-transform:uppercase;margin-bottom:12px;}
+/* stat grid */
+.stat-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 14px; }
+.stat-card { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 14px; text-align: center; }
+.stat-val { font-size: 17px; font-weight: 900; color: var(--text); letter-spacing: -.5px; }
+.stat-lbl { font-size: 10px; font-weight: 600; color: var(--sub2); margin-top: 4px; letter-spacing: .3px; text-transform: uppercase; }
 
-#toast{position:fixed;bottom:calc(var(--nav-h)+var(--safe-b)+16px);left:50%;transform:translateX(-50%) translateY(8px);background:#1a202c;color:#fff;font-size:13px;font-weight:600;padding:12px 22px;border-radius:100px;white-space:nowrap;z-index:200;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+/* テーブル */
+.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tbl th { background: #f8f9fb; color: var(--sub); font-size: 11px; font-weight: 700; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); letter-spacing: .3px; text-transform: uppercase; }
+.tbl td { padding: 13px 14px; border-bottom: 1px solid #f4f5f7; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr.tr-total td { background: var(--navy-l); font-weight: 800; color: var(--navy); }
+.tbl td.num { font-weight: 700; text-align: right; }
+.tbl td.right { text-align: right; }
 
-.modal{display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:150;align-items:flex-end;justify-content:center;}
-.modal.open{display:flex;}
-.modal-box{background:#fff;border-radius:24px 24px 0 0;padding:28px 20px;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;}
-.modal-title{font-size:18px;font-weight:900;margin-bottom:22px;letter-spacing:-.3px;}
-.modal-footer{display:flex;gap:10px;margin-top:18px;}
+/* グラフ */
+.chart-wrap { position: relative; height: 200px; margin-top: 10px; }
+.section-title { font-size: 11px; font-weight: 700; color: var(--sub); letter-spacing: .5px; text-transform: uppercase; margin-bottom: 12px; }
 
-.spinner{width:22px;height:22px;border:2.5px solid var(--blue-l);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;margin:28px auto;display:block;}
-@keyframes spin{to{transform:rotate(360deg);}}
+/* トースト */
+#toast { position: fixed; bottom: calc(var(--nav-h) + var(--safe-b) + 14px); left: 50%; transform: translateX(-50%) translateY(8px); background: var(--navy); color: #fff; font-size: 13px; font-weight: 600; padding: 12px 22px; border-radius: 100px; white-space: nowrap; z-index: 200; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-.year-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
-.year-btn{padding:12px 0;background:#fff;border:1.5px solid var(--border);border-radius:12px;font-weight:700;font-size:14px;color:var(--text);}
-.year-btn.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+/* モーダル */
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 150; align-items: flex-end; justify-content: center; }
+.modal.open { display: flex; }
+.modal-box { background: #fff; border-radius: 22px 22px 0 0; padding: 26px 20px; width: 100%; max-width: 520px; max-height: 88vh; overflow-y: auto; }
+.modal-title { font-size: 17px; font-weight: 900; color: var(--navy); margin-bottom: 20px; letter-spacing: -.3px; }
+.modal-footer { display: flex; gap: 10px; margin-top: 18px; }
 
-@media print{#nav,#toast,.no-print{display:none!important;}.page{display:block!important;padding-bottom:0;}.page:not(#page-accounting){display:none!important;}}
+.spinner { width: 20px; height: 20px; border: 2px solid #e9ecf0; border-top-color: var(--navy); border-radius: 50%; animation: spin .7s linear infinite; margin: 30px auto; display: block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media print { #nav, #toast, .no-print { display: none !important; } .page { display: block !important; padding-bottom: 0; } .page:not(#page-accounting) { display: none !important; } }
 </style>
 </head>
 <body>
 
 <nav id="nav">
   <button class="nav-btn active" id="nav-home" onclick="go('home')">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     ホーム
   </button>
   <button class="nav-btn" id="nav-input" onclick="go('input')">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
     入力
   </button>
   <button class="nav-btn" id="nav-stats" onclick="go('stats')">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
     集計
   </button>
   <button class="nav-btn" id="nav-accounting" onclick="go('accounting')">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
     経理
   </button>
   <button class="nav-btn" id="nav-settings" onclick="go('settings')">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     設定
   </button>
 </nav>
@@ -178,34 +196,38 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
     <div class="sub" id="home-date">読み込み中…</div>
   </div>
   <div class="wrap">
+    <div class="kpi-main gap">
+      <div class="kpi-main-label">今日の売上</div>
+      <div class="kpi-main-value" id="kpi-today">—</div>
+      <div class="kpi-main-sub" id="kpi-today-sub">読み込み中…</div>
+    </div>
+
     <div class="kpi-row">
-      <div class="kpi-card big">
-        <div class="kpi-label">今日の売上</div>
-        <div class="kpi-value" id="kpi-today">—</div>
-        <div class="kpi-sub" id="kpi-today-sub">読み込み中…</div>
+      <div class="kpi-card">
+        <div class="kpi-card-label">新規</div>
+        <div class="kpi-card-value" id="kpi-shinki">—</div>
+        <div class="kpi-card-sub" id="kpi-shinki-sub"></div>
       </div>
-      <div class="kpi-card green">
-        <div class="kpi-label">新規</div>
-        <div class="kpi-value" id="kpi-shinki">—</div>
-        <div class="kpi-sub" id="kpi-shinki-sub"></div>
-      </div>
-      <div class="kpi-card orange">
-        <div class="kpi-label">常連</div>
-        <div class="kpi-value" id="kpi-joren">—</div>
-        <div class="kpi-sub" id="kpi-joren-sub"></div>
+      <div class="kpi-card">
+        <div class="kpi-card-label">常連</div>
+        <div class="kpi-card-value" id="kpi-joren">—</div>
+        <div class="kpi-card-sub" id="kpi-joren-sub"></div>
       </div>
     </div>
-    <div class="month-bar gap">
-      <div class="month-bar-label">今月の売上</div>
-      <div class="month-bar-header">
-        <div class="month-bar-amount" id="kpi-month">—</div>
-        <span id="kpi-month-diff" class="tag tag-neutral">—</span>
+
+    <div class="month-card gap">
+      <div class="month-card-top">
+        <div class="month-card-label">今月の売上</div>
+        <span id="kpi-month-diff" class="tag tag-flat">—</span>
       </div>
-      <div style="font-size:12px;color:var(--sub2);margin-bottom:10px;" id="kpi-month-sub"></div>
+      <div class="month-card-value" id="kpi-month">—</div>
+      <div class="month-card-sub" id="kpi-month-sub"></div>
       <div class="progress-bar"><div class="progress-fill" id="month-progress" style="width:0%"></div></div>
     </div>
+
     <div class="section-title">クイック入力</div>
     <div class="quick-list gap" id="quick-btns"><span class="spinner"></span></div>
+
     <div class="section-title">今日の記録</div>
     <div class="card"><div id="today-list" style="padding:0 18px;"><span class="spinner"></span></div></div>
   </div>
@@ -235,35 +257,26 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
 <div id="page-stats" class="page">
   <div class="page-header"><h1>集計</h1></div>
   <div class="wrap">
-    <!-- 年別 / 月別 / 日別タブ -->
     <div class="view-tabs">
-      <button class="view-tab" id="vtab-year"  onclick="switchView('year')">年別</button>
+      <button class="view-tab" id="vtab-year" onclick="switchView('year')">年別</button>
       <button class="view-tab active" id="vtab-month" onclick="switchView('month')">月別</button>
-      <button class="view-tab" id="vtab-day"   onclick="switchView('day')">日別</button>
+      <button class="view-tab" id="vtab-day" onclick="switchView('day')">日別</button>
     </div>
 
-    <!-- 年別ビュー -->
+    <!-- 年別 -->
     <div id="view-year" style="display:none;">
       <div class="year-grid" id="year-selector"></div>
+      <div class="kpi-main gap">
+        <div class="kpi-main-label">年間売上</div>
+        <div class="kpi-main-value" id="y-total">—</div>
+        <div class="kpi-main-sub"><span id="y-count">—</span>件 ／ 客単価 <span id="y-unit">—</span></div>
+      </div>
       <div class="kpi-row">
-        <div class="kpi-card big">
-          <div class="kpi-label">年間売上</div>
-          <div class="kpi-value" id="y-total">—</div>
-          <div class="kpi-sub"><span id="y-count">—</span>件 ／ 客単価 <span id="y-unit">—</span></div>
-        </div>
-        <div class="kpi-card green">
-          <div class="kpi-label">新規</div>
-          <div class="kpi-value" id="y-shinki">—</div>
-          <div class="kpi-sub" id="y-shinki-c"></div>
-        </div>
-        <div class="kpi-card orange">
-          <div class="kpi-label">常連</div>
-          <div class="kpi-value" id="y-joren">—</div>
-          <div class="kpi-sub" id="y-joren-c"></div>
-        </div>
+        <div class="kpi-card"><div class="kpi-card-label">新規</div><div class="kpi-card-value" id="y-shinki">—</div><div class="kpi-card-sub" id="y-shinki-c"></div></div>
+        <div class="kpi-card"><div class="kpi-card-label">常連</div><div class="kpi-card-value" id="y-joren">—</div><div class="kpi-card-sub" id="y-joren-c"></div></div>
       </div>
       <div class="card card-pad gap">
-        <div class="section-title">月別推移</div>
+        <div class="section-title">月別推移（積み上げ）</div>
         <div class="chart-wrap"><canvas id="year-chart"></canvas></div>
       </div>
       <div class="card gap">
@@ -272,34 +285,26 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
       </div>
     </div>
 
-    <!-- 月別ビュー -->
+    <!-- 月別 -->
     <div id="view-month">
       <div class="month-nav">
         <button class="month-nav-btn" onclick="changeStatsMonth(-1)">◀ 前月</button>
         <span class="month-nav-label" id="stats-month-label"></span>
         <button class="month-nav-btn" onclick="changeStatsMonth(1)">翌月 ▶</button>
       </div>
+      <div class="kpi-main gap">
+        <div class="kpi-main-label">月間売上</div>
+        <div class="kpi-main-value" id="m-total">—</div>
+        <div class="kpi-main-sub"><span id="m-count">—</span>件 ／ 客単価 <span id="m-unit">—</span></div>
+      </div>
       <div class="kpi-row">
-        <div class="kpi-card big">
-          <div class="kpi-label">月間売上</div>
-          <div class="kpi-value" id="m-total">—</div>
-          <div class="kpi-sub"><span id="m-count">—</span>件 ／ 客単価 <span id="m-unit">—</span></div>
-        </div>
-        <div class="kpi-card green">
-          <div class="kpi-label">新規</div>
-          <div class="kpi-value" id="m-shinki">—</div>
-          <div class="kpi-sub" id="m-shinki-c"></div>
-        </div>
-        <div class="kpi-card orange">
-          <div class="kpi-label">常連</div>
-          <div class="kpi-value" id="m-joren">—</div>
-          <div class="kpi-sub" id="m-joren-c"></div>
-        </div>
+        <div class="kpi-card"><div class="kpi-card-label">新規</div><div class="kpi-card-value" id="m-shinki">—</div><div class="kpi-card-sub" id="m-shinki-c"></div></div>
+        <div class="kpi-card"><div class="kpi-card-label">常連</div><div class="kpi-card-value" id="m-joren">—</div><div class="kpi-card-sub" id="m-joren-c"></div></div>
       </div>
       <div class="stat-row">
         <div class="stat-card"><div class="stat-val" id="m-days">—</div><div class="stat-lbl">営業日数</div></div>
         <div class="stat-card"><div class="stat-val" id="m-unit2">—</div><div class="stat-lbl">客単価</div></div>
-        <div class="stat-card"><div class="stat-val" id="m-diff" style="font-size:16px;">—</div><div class="stat-lbl">先月比</div></div>
+        <div class="stat-card"><div class="stat-val" id="m-diff" style="font-size:15px;">—</div><div class="stat-lbl">先月比</div></div>
       </div>
       <div class="card card-pad gap">
         <div class="section-title">日別売上推移</div>
@@ -315,7 +320,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
       </div>
     </div>
 
-    <!-- 日別ビュー -->
+    <!-- 日別 -->
     <div id="view-day" style="display:none;">
       <div class="month-nav">
         <button class="month-nav-btn" onclick="changeDayMonth(-1)">◀ 前月</button>
@@ -323,7 +328,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
         <button class="month-nav-btn" onclick="changeDayMonth(1)">翌月 ▶</button>
       </div>
       <div class="card gap">
-        <div style="padding:18px 18px 4px;"><div class="section-title">日別実績</div></div>
+        <div style="padding:18px 18px 0;"><div class="section-title">日別実績</div></div>
         <div id="day-table"></div>
       </div>
     </div>
@@ -338,9 +343,9 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
       <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:14px;">
         <div style="flex:1;"><label class="form-label">年</label><select class="form-control" id="acc-year"></select></div>
         <div style="flex:1;"><label class="form-label">月</label><select class="form-control" id="acc-month"></select></div>
-        <button class="btn btn-primary" onclick="loadAccounting()" style="padding:14px 18px;white-space:nowrap;">表示</button>
+        <button class="btn btn-primary" onclick="loadAccounting()" style="padding:13px 16px;white-space:nowrap;">表示</button>
       </div>
-      <div style="display:flex;gap:10px;">
+      <div style="display:flex;gap:8px;">
         <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨 印刷</button>
         <button class="btn btn-secondary btn-sm" onclick="downloadCsv()">📥 CSV</button>
       </div>
@@ -368,7 +373,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
         <div style="flex:1;"><label class="form-label">年</label><select class="form-control" id="csv-year"></select></div>
         <div style="flex:1;"><label class="form-label">月</label><select class="form-control" id="csv-month"></select></div>
       </div>
-      <div style="display:flex;gap:10px;">
+      <div style="display:flex;gap:8px;">
         <button class="btn btn-secondary btn-sm" onclick="downloadCsvFrom()">月別CSV</button>
         <button class="btn btn-secondary btn-sm" onclick="window.open(API+'/api/getCsv')">全データCSV</button>
       </div>
@@ -410,39 +415,35 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
 <script>
 const API = 'https://amatoseitai-v2-production.up.railway.app';
 const fmt  = n => '¥' + Number(n).toLocaleString();
-const fmtS = n => n >= 10000 ? (n/10000).toFixed(1)+'万' : '¥'+Number(n).toLocaleString();
+const fmtS = n => n >= 10000 ? (n/10000).toFixed(1).replace('.0','')+'万' : '¥'+Number(n).toLocaleString();
 const esc  = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/'/g,"\\'");
 
 function toast(msg, err=false) {
   const el = document.getElementById('toast');
   el.textContent = msg;
-  el.style.background = err ? '#dc2626' : '#1a202c';
+  el.style.background = err ? '#b91c1c' : '#0f172a';
   el.classList.add('show');
   clearTimeout(el._t);
   el._t = setTimeout(() => el.classList.remove('show'), 3000);
 }
 
 async function GET(path, params={}) {
-  const qs = Object.keys(params).length ? '?'+new URLSearchParams(params) : '';
-  const r = await fetch(API + path + qs);
-  return r.json();
+  const qs = Object.keys(params).length ? '?' + new URLSearchParams(params) : '';
+  return (await fetch(API + path + qs)).json();
 }
 async function POST(path, body) {
-  const r = await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  return r.json();
+  return (await fetch(API+path, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)})).json();
 }
 async function PUT(path, body) {
-  const r = await fetch(API+path,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  return r.json();
+  return (await fetch(API+path, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)})).json();
 }
 async function DEL(path) {
-  const r = await fetch(API+path,{method:'DELETE'});
-  return r.json();
+  return (await fetch(API+path, {method:'DELETE'})).json();
 }
 
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.modal').forEach(m => { m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); }); });
+document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target===m) m.classList.remove('open'); }));
 
 // ===== ナビ =====
 let curPage = 'home';
@@ -453,19 +454,18 @@ function go(page) {
     document.getElementById('nav-'+p).classList.toggle('active', p===page);
   });
   curPage = page;
-  if (page==='input')    { loadHistory(); }
-  if (page==='stats')    { loadCurrentView(); }
-  if (page==='settings') { loadMaster(); }
+  if (page==='input')    loadHistory();
+  if (page==='stats')    loadCurrentView();
+  if (page==='settings') loadMaster();
 }
 
 // ===== 状態 =====
 let masterItems = [];
-let statsYear, statsMonth, statsView='month';
-let dayYear, dayMonth;
-let selectedYear;
-let dailyChartObj=null, compareChartObj=null, yearChartObj=null;
+let statsYear, statsMonth, statsView = 'month';
+let dayYear, dayMonth, selectedYear;
+let chartDaily=null, chartCompare=null, chartYear=null;
 
-// ===== 集計ビュー切替 =====
+// ===== 集計ビュー =====
 function switchView(v) {
   statsView = v;
   ['year','month','day'].forEach(t => {
@@ -474,7 +474,6 @@ function switchView(v) {
   });
   loadCurrentView();
 }
-
 function loadCurrentView() {
   if (statsView==='month') loadMonthStats();
   if (statsView==='day')   loadDayStats();
@@ -484,17 +483,12 @@ function loadCurrentView() {
 // ===== 初期化 =====
 async function init() {
   const d = new Date();
-  const days = ['日','月','火','水','木','金','土'];
-  document.getElementById('home-date').textContent = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${days[d.getDay()]}）`;
-  statsYear  = d.getFullYear();
-  statsMonth = d.getMonth()+1;
-  dayYear    = d.getFullYear();
-  dayMonth   = d.getMonth()+1;
-  selectedYear = d.getFullYear();
-  updateStatsLabel();
-  updateDayLabel();
-  initSelects();
-  buildYearSelector();
+  const dw = ['日','月','火','水','木','金','土'];
+  document.getElementById('home-date').textContent = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${dw[d.getDay()]}）`;
+  statsYear = dayYear = selectedYear = d.getFullYear();
+  statsMonth = dayMonth = d.getMonth()+1;
+  updateStatsLabel(); updateDayLabel();
+  initSelects(); buildYearSelector();
   try {
     const data = await GET('/api/initData');
     applyMaster(data.master || []);
@@ -502,39 +496,34 @@ async function init() {
     applyTodayHistory(data.history?.records || []);
   } catch(e) {
     toast('データ取得エラー', true);
-    ['today-list','quick-btns'].forEach(id => { document.getElementById(id).innerHTML = '<div style="padding:16px;text-align:center;color:var(--sub2);">接続エラー</div>'; });
+    ['today-list','quick-btns'].forEach(id => { document.getElementById(id).innerHTML = '<div style="padding:18px;text-align:center;color:var(--sub2);">接続エラー</div>'; });
   }
 }
 
 function initSelects() {
-  const now = new Date();
-  const y = now.getFullYear(), m = now.getMonth()+1;
+  const y = new Date().getFullYear(), m = new Date().getMonth()+1;
   ['acc-year','csv-year'].forEach(id => {
-    const el = document.getElementById(id);
-    el.innerHTML = '';
+    const el = document.getElementById(id); el.innerHTML = '';
     for (let i=y; i>=y-3; i--) el.innerHTML += `<option value="${i}"${i===y?' selected':''}>${i}年</option>`;
   });
   ['acc-month','csv-month'].forEach(id => {
-    const el = document.getElementById(id);
-    el.innerHTML = '';
+    const el = document.getElementById(id); el.innerHTML = '';
     for (let i=1; i<=12; i++) el.innerHTML += `<option value="${i}"${i===m?' selected':''}>${i}月</option>`;
   });
 }
 
 function buildYearSelector() {
   const now = new Date().getFullYear();
-  const el = document.getElementById('year-selector');
-  el.innerHTML = '';
-  for (let y=now; y>=now-3; y--) {
-    el.innerHTML += `<button class="year-btn${y===selectedYear?' active':''}" id="ybtn-${y}" onclick="selectYear(${y})">${y}年</button>`;
-  }
+  document.getElementById('year-selector').innerHTML =
+    Array.from({length:4},(_,i)=>now-i).map(y =>
+      `<button class="year-btn${y===selectedYear?' active':''}" id="ybtn-${y}" onclick="selectYear(${y})">${y}年</button>`
+    ).join('');
 }
 
 function selectYear(y) {
   selectedYear = y;
   document.querySelectorAll('.year-btn').forEach(b => b.classList.remove('active'));
-  const btn = document.getElementById('ybtn-'+y);
-  if (btn) btn.classList.add('active');
+  document.getElementById('ybtn-'+y)?.classList.add('active');
   loadYearStats();
 }
 
@@ -548,11 +537,8 @@ function applyMaster(items) {
 
 function renderQuickBtns() {
   const el = document.getElementById('quick-btns');
-  if (!masterItems.length) {
-    el.innerHTML = '<div class="card card-pad" style="text-align:center;color:var(--sub2);">設定タブからマスタを追加してください</div>';
-    return;
-  }
-  el.innerHTML = masterItems.map((item, i) =>
+  if (!masterItems.length) { el.innerHTML = '<div class="card card-pad" style="text-align:center;color:var(--sub2);">設定からマスタを追加してください</div>'; return; }
+  el.innerHTML = masterItems.map((item,i) =>
     `<button class="quick-item${i===0?' primary':''}" onclick="quickAdd('${esc(item.type)}',${item.amount})">
       <span class="qi-name">${esc(item.type)}</span>
       <span class="qi-amt">${fmt(item.amount)}</span>
@@ -564,155 +550,130 @@ function updateTypeSelects() {
   const opts = masterItems.map(i => `<option value="${esc(i.type)}" data-amount="${i.amount}">${esc(i.type)} (${fmt(i.amount)})</option>`).join('');
   const it = document.getElementById('input-type');
   const et = document.getElementById('edit-type');
-  if (it) { it.innerHTML = '<option value="">種別を選択してください</option>' + opts; it.onchange = () => { const o=it.options[it.selectedIndex]; if(o?.dataset.amount) document.getElementById('input-amount').value=o.dataset.amount; }; }
+  if (it) { it.innerHTML = '<option value="">選択してください</option>' + opts; it.onchange = () => { const o=it.options[it.selectedIndex]; if(o?.dataset.amount) document.getElementById('input-amount').value=o.dataset.amount; }; }
   if (et) et.innerHTML = opts;
 }
 
 async function loadMaster() {
-  try {
-    const d = await GET('/api/getMaster');
-    applyMaster(d.items || []);
-  } catch(e) { toast('マスタ取得エラー', true); }
+  try { const d = await GET('/api/getMaster'); applyMaster(d.items||[]); }
+  catch(e) { toast('マスタ取得エラー',true); }
 }
 
 function renderMasterList() {
   const el = document.getElementById('master-list');
-  if (!masterItems.length) { el.innerHTML = '<div style="padding:18px;text-align:center;color:var(--sub2);">マスタが空です</div>'; return; }
+  if (!masterItems.length) { el.innerHTML='<div style="padding:18px;text-align:center;color:var(--sub2);">マスタが空です</div>'; return; }
   el.innerHTML = masterItems.map(item => `
     <div class="list-item">
       <div style="flex:1;">
         <div style="font-weight:800;font-size:15px;">${esc(item.type)}</div>
-        <div style="font-size:13px;color:var(--sub);margin-top:2px;">${fmt(item.amount)}${item.description?' · '+esc(item.description):''}</div>
+        <div style="font-size:12px;color:var(--sub);margin-top:2px;">${fmt(item.amount)}${item.description?' · '+esc(item.description):''}</div>
       </div>
       <button class="icon-btn" onclick="openEditMaster(${item.id},'${esc(item.type)}',${item.amount},'${esc(item.description||'')}')">編集</button>
       <button class="del-btn" onclick="deleteMaster(${item.id},'${esc(item.type)}')">✕</button>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 async function addMaster() {
-  const type   = document.getElementById('new-type').value.trim();
-  const amount = parseInt(document.getElementById('new-amount').value);
-  const desc   = document.getElementById('new-desc').value.trim();
+  const type=document.getElementById('new-type').value.trim(), amount=parseInt(document.getElementById('new-amount').value), desc=document.getElementById('new-desc').value.trim();
   if (!type||!amount) { toast('種別名と金額は必須です',true); return; }
-  const r = await POST('/api/addMaster',{type,amount,description:desc});
+  const r=await POST('/api/addMaster',{type,amount,description:desc});
   if (r.success) { toast('マスタを追加しました'); ['new-type','new-amount','new-desc'].forEach(id=>document.getElementById(id).value=''); await loadMaster(); }
   else toast(r.message,true);
 }
 
 function openEditMaster(id,type,amount,desc) {
-  document.getElementById('edit-master-id').value=id;
-  document.getElementById('edit-master-type').value=type;
-  document.getElementById('edit-master-amount').value=amount;
-  document.getElementById('edit-master-desc').value=desc;
+  document.getElementById('edit-master-id').value=id; document.getElementById('edit-master-type').value=type;
+  document.getElementById('edit-master-amount').value=amount; document.getElementById('edit-master-desc').value=desc;
   openModal('edit-master-modal');
 }
-
 async function confirmEditMaster() {
-  const id=document.getElementById('edit-master-id').value;
-  const type=document.getElementById('edit-master-type').value.trim();
-  const amount=parseInt(document.getElementById('edit-master-amount').value);
-  const desc=document.getElementById('edit-master-desc').value.trim();
-  if(!id||!type||!amount){toast('全項目を入力してください',true);return;}
+  const id=document.getElementById('edit-master-id').value, type=document.getElementById('edit-master-type').value.trim(), amount=parseInt(document.getElementById('edit-master-amount').value), desc=document.getElementById('edit-master-desc').value.trim();
+  if (!id||!type||!amount) { toast('全項目を入力してください',true); return; }
   const r=await PUT('/api/updateMaster/'+id,{type,amount,description:desc});
-  if(r.success){toast('更新しました');closeModal('edit-master-modal');await loadMaster();}
-  else toast(r.message,true);
+  if (r.success) { toast('更新しました'); closeModal('edit-master-modal'); await loadMaster(); } else toast(r.message,true);
 }
-
 async function deleteMaster(id,type) {
-  if(!confirm(`「${type}」を削除しますか？`))return;
+  if (!confirm(`「${type}」を削除しますか？`)) return;
   const r=await DEL('/api/deleteMaster/'+id);
-  if(r.success){toast('削除しました');await loadMaster();}
-  else toast(r.message,true);
+  if (r.success) { toast('削除しました'); await loadMaster(); } else toast(r.message,true);
 }
 
 // ===== ホーム =====
 function applyHomeStats(today,thisM,prevM) {
-  if(!today)return;
+  if (!today) return;
   document.getElementById('kpi-today').textContent     = fmt(today.totalSales);
   document.getElementById('kpi-today-sub').textContent = `合計 ${today.totalCount}件`;
   document.getElementById('kpi-shinki').textContent    = fmt(today.shinkiSales);
-  document.getElementById('kpi-shinki-sub').textContent= `${today.shinkiCount}件`;
+  document.getElementById('kpi-shinki-sub').textContent = `${today.shinkiCount}件`;
   document.getElementById('kpi-joren').textContent     = fmt(today.jorenSales);
-  document.getElementById('kpi-joren-sub').textContent = `${today.jorenCount}件`;
-  if(!thisM)return;
+  document.getElementById('kpi-joren-sub').textContent  = `${today.jorenCount}件`;
+  if (!thisM) return;
   document.getElementById('kpi-month').textContent     = fmt(thisM.totalSales);
-  document.getElementById('kpi-month-sub').textContent = `${thisM.totalCount}件`;
-  if(prevM?.totalSales>0){
-    const pct=Math.round((thisM.totalSales-prevM.totalSales)/prevM.totalSales*100);
-    const tag=document.getElementById('kpi-month-diff');
-    tag.textContent=`${pct>=0?'▲':'▼'}${Math.abs(pct)}% 先月比`;
-    tag.className='tag '+(pct>=0?'tag-up':'tag-down');
-    document.getElementById('month-progress').style.width=Math.min(Math.round(thisM.totalSales/prevM.totalSales*100),130)+'%';
-  }else{document.getElementById('kpi-month-diff').textContent='先月比なし';}
+  document.getElementById('kpi-month-sub').textContent  = `${thisM.totalCount}件`;
+  if (prevM?.totalSales > 0) {
+    const pct = Math.round((thisM.totalSales-prevM.totalSales)/prevM.totalSales*100);
+    const tag = document.getElementById('kpi-month-diff');
+    tag.textContent = `${pct>=0?'▲':'▼'}${Math.abs(pct)}% 先月比`;
+    tag.className = 'tag ' + (pct>=0?'tag-up':'tag-down');
+    document.getElementById('month-progress').style.width = Math.min(Math.round(thisM.totalSales/prevM.totalSales*100),130)+'%';
+  } else {
+    document.getElementById('kpi-month-diff').textContent = '先月比なし';
+  }
 }
 
 function applyTodayHistory(records) {
-  const now=new Date();
-  const tk=`${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
-  const recs=records.filter(r=>r.date===tk);
-  const el=document.getElementById('today-list');
-  if(!recs.length){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--sub2);font-size:14px;">まだ記録がありません</div>';return;}
-  el.innerHTML=recs.map(r=>`
+  const now=new Date(), tk=`${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
+  const recs = records.filter(r=>r.date===tk);
+  const el = document.getElementById('today-list');
+  if (!recs.length) { el.innerHTML='<div style="padding:20px;text-align:center;color:var(--sub2);font-size:14px;">まだ記録がありません</div>'; return; }
+  el.innerHTML = recs.map(r=>`
     <div class="list-item">
       <span class="badge ${r.type==='新規'?'badge-shinki':r.type==='常連'?'badge-joren':'badge-other'}">${esc(r.type)}</span>
       <span class="list-amount">${fmt(r.amount)}</span>
       <span class="list-time">${r.time}</span>
       <button class="del-btn" onclick="deleteSale(${r.id},'今日')">✕</button>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 async function refreshHome() {
   try {
-    const now=new Date();const y=now.getFullYear(),m=now.getMonth()+1;
-    const pm=m===1?12:m-1,py=m===1?y-1:y;
-    const [today,thisM,prevM,hist]=await Promise.all([
-      GET('/api/getTodayStats'),
-      GET('/api/getMonthStats',{year:y,month:m}),
-      GET('/api/getMonthStats',{year:py,month:pm}),
-      GET('/api/getRecentHistory',{days:1})
-    ]);
-    applyHomeStats(today,thisM,prevM);
-    applyTodayHistory(hist.records||[]);
-  }catch(e){}
+    const now=new Date(), y=now.getFullYear(), m=now.getMonth()+1, pm=m===1?12:m-1, py=m===1?y-1:y;
+    const [today,thisM,prevM,hist] = await Promise.all([GET('/api/getTodayStats'),GET('/api/getMonthStats',{year:y,month:m}),GET('/api/getMonthStats',{year:py,month:pm}),GET('/api/getRecentHistory',{days:1})]);
+    applyHomeStats(today,thisM,prevM); applyTodayHistory(hist.records||[]);
+  } catch(e) {}
 }
 
 async function quickAdd(type,amount) {
   const r=await POST('/api/addSale',{type,amount});
-  if(r.success){toast(`${type} ${fmt(amount)} を登録しました`);refreshHome();if(curPage==='input')loadHistory();}
+  if (r.success) { toast(`${type} ${fmt(amount)}`); refreshHome(); if(curPage==='input') loadHistory(); }
   else toast(r.message,true);
 }
 
 // ===== 入力 =====
 async function addSale() {
-  const type=document.getElementById('input-type').value;
-  const amount=parseInt(document.getElementById('input-amount').value);
-  if(!type){toast('種別を選択してください',true);return;}
-  if(!amount||amount<=0){toast('正しい金額を入力してください',true);return;}
-  const btn=document.getElementById('add-sale-btn');
-  btn.disabled=true;
+  const type=document.getElementById('input-type').value, amount=parseInt(document.getElementById('input-amount').value);
+  if (!type) { toast('種別を選択してください',true); return; }
+  if (!amount||amount<=0) { toast('正しい金額を入力してください',true); return; }
+  const btn=document.getElementById('add-sale-btn'); btn.disabled=true;
   const r=await POST('/api/addSale',{type,amount});
-  if(r.success){toast(`${type} ${fmt(amount)} を登録しました`);document.getElementById('input-amount').value='';refreshHome();loadHistory();}
+  if (r.success) { toast(`登録しました：${type} ${fmt(amount)}`); document.getElementById('input-amount').value=''; refreshHome(); loadHistory(); }
   else toast(r.message,true);
   btn.disabled=false;
 }
 
 async function loadHistory() {
   document.getElementById('history-list').innerHTML='<span class="spinner"></span>';
-  try{
-    const d=await GET('/api/getRecentHistory',{days:30});
-    renderHistory(d.records||[]);
-  }catch(e){document.getElementById('history-list').innerHTML='<div style="padding:18px;text-align:center;color:var(--red);">読み込みエラー</div>';}
+  try { const d=await GET('/api/getRecentHistory',{days:30}); renderHistory(d.records||[]); }
+  catch(e) { document.getElementById('history-list').innerHTML='<div style="padding:18px;text-align:center;color:var(--neg);">読み込みエラー</div>'; }
 }
 
 function renderHistory(records) {
   const el=document.getElementById('history-list');
-  if(!records.length){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--sub2);font-size:14px;">履歴がありません</div>';return;}
+  if (!records.length) { el.innerHTML='<div style="padding:20px;text-align:center;color:var(--sub2);font-size:14px;">履歴がありません</div>'; return; }
   const groups={};records.forEach(r=>{(groups[r.date]=groups[r.date]||[]).push(r);});
   el.innerHTML=Object.entries(groups).map(([date,items])=>`
     <div>
-      <div style="font-size:11px;font-weight:700;color:var(--sub2);padding:12px 0 4px;letter-spacing:.3px;">${date}</div>
+      <div style="font-size:11px;font-weight:700;color:var(--sub2);padding:11px 0 4px;letter-spacing:.3px;">${date}</div>
       ${items.map(r=>`
         <div class="list-item">
           <span class="badge ${r.type==='新規'?'badge-shinki':r.type==='常連'?'badge-joren':'badge-other'}">${esc(r.type)}</span>
@@ -720,56 +681,36 @@ function renderHistory(records) {
           <span class="list-time">${r.time}</span>
           <button class="icon-btn" onclick="openEditSale(${r.id},'${esc(r.type)}',${r.amount})">編集</button>
           <button class="del-btn" onclick="deleteSale(${r.id},'${date}')">✕</button>
-        </div>
-      `).join('')}
-    </div>
-  `).join('');
+        </div>`).join('')}
+    </div>`).join('');
 }
 
 function openEditSale(id,type,amount) {
-  document.getElementById('edit-id').value=id;
-  document.getElementById('edit-type').value=type;
-  document.getElementById('edit-amount').value=amount;
+  document.getElementById('edit-id').value=id; document.getElementById('edit-type').value=type; document.getElementById('edit-amount').value=amount;
   openModal('edit-modal');
 }
-
 async function confirmEdit() {
-  const id=document.getElementById('edit-id').value;
-  const type=document.getElementById('edit-type').value;
-  const amount=parseInt(document.getElementById('edit-amount').value);
-  if(!id||!type||!amount){toast('全項目を入力してください',true);return;}
+  const id=document.getElementById('edit-id').value, type=document.getElementById('edit-type').value, amount=parseInt(document.getElementById('edit-amount').value);
+  if (!id||!type||!amount) { toast('全項目を入力してください',true); return; }
   const r=await PUT('/api/editSale/'+id,{type,amount});
-  if(r.success){toast('修正しました');closeModal('edit-modal');refreshHome();loadHistory();}
-  else toast(r.message,true);
+  if (r.success) { toast('修正しました'); closeModal('edit-modal'); refreshHome(); loadHistory(); } else toast(r.message,true);
 }
-
 async function deleteSale(id,dateStr) {
-  if(!confirm(`${dateStr}の売上を削除しますか？`))return;
+  if (!confirm(`${dateStr}の売上を削除しますか？`)) return;
   const r=await DEL('/api/deleteSale/'+id);
-  if(r.success){toast('削除しました');refreshHome();if(curPage==='input')loadHistory();}
-  else toast(r.message,true);
+  if (r.success) { toast('削除しました'); refreshHome(); if(curPage==='input') loadHistory(); } else toast(r.message,true);
 }
 
 // ===== 月別集計 =====
 function updateStatsLabel() { document.getElementById('stats-month-label').textContent=`${statsYear}年${statsMonth}月`; }
-
 function changeStatsMonth(d) {
-  statsMonth+=d;
-  if(statsMonth>12){statsMonth=1;statsYear++;}
-  if(statsMonth<1){statsMonth=12;statsYear--;}
-  updateStatsLabel();
-  loadMonthStats();
+  statsMonth+=d; if(statsMonth>12){statsMonth=1;statsYear++;} if(statsMonth<1){statsMonth=12;statsYear--;} updateStatsLabel(); loadMonthStats();
 }
 
 async function loadMonthStats() {
-  const y=statsYear,m=statsMonth;
-  const pm=m===1?12:m-1,py=m===1?y-1:y;
-  try{
-    const [cur,prev,daily]=await Promise.all([
-      GET('/api/getMonthStats',{year:y,month:m}),
-      GET('/api/getMonthStats',{year:py,month:pm}),
-      GET('/api/getDailyBreakdown',{year:y,month:m})
-    ]);
+  const y=statsYear, m=statsMonth, pm=m===1?12:m-1, py=m===1?y-1:y;
+  try {
+    const [cur,prev,daily]=await Promise.all([GET('/api/getMonthStats',{year:y,month:m}),GET('/api/getMonthStats',{year:py,month:pm}),GET('/api/getDailyBreakdown',{year:y,month:m})]);
     const unit=cur.totalCount>0?Math.round(cur.totalSales/cur.totalCount):0;
     document.getElementById('m-total').textContent=fmt(cur.totalSales);
     document.getElementById('m-count').textContent=cur.totalCount;
@@ -779,14 +720,12 @@ async function loadMonthStats() {
     document.getElementById('m-joren').textContent=fmt(cur.jorenSales);
     document.getElementById('m-joren-c').textContent=`${cur.jorenCount}件`;
     document.getElementById('m-unit2').textContent=fmt(unit);
-    if(prev.totalSales>0){
+    if (prev.totalSales>0) {
       const pct=Math.round((cur.totalSales-prev.totalSales)/prev.totalSales*100);
       const el=document.getElementById('m-diff');
-      el.textContent=`${pct>=0?'▲':'▼'}${Math.abs(pct)}%`;
-      el.style.color=pct>=0?'var(--green)':'var(--red)';el.style.fontWeight='900';
+      el.textContent=`${pct>=0?'▲':'▼'}${Math.abs(pct)}%`; el.style.color=pct>=0?'var(--pos)':'var(--neg)'; el.style.fontWeight='900';
     }
-    const activeDays=daily.days?.filter(d=>d.total>0).length||0;
-    document.getElementById('m-days').textContent=activeDays+'日';
+    document.getElementById('m-days').textContent=(daily.days?.filter(d=>d.total>0).length||0)+'日';
     renderDailyChart(daily);
     loadCompareChart(y,m);
     document.getElementById('month-table').innerHTML=`
@@ -796,24 +735,22 @@ async function loadMonthStats() {
           <tr><td><span class="badge badge-shinki">新規</span></td><td>${cur.shinkiCount}件</td><td class="num">${fmt(cur.shinkiSales)}</td></tr>
           <tr><td><span class="badge badge-joren">常連</span></td><td>${cur.jorenCount}件</td><td class="num">${fmt(cur.jorenSales)}</td></tr>
           ${cur.otherCount>0?`<tr><td><span class="badge badge-other">その他</span></td><td>${cur.otherCount}件</td><td class="num">${fmt(cur.otherSales)}</td></tr>`:''}
-          <tr class="total-row"><td>合計</td><td>${cur.totalCount}件</td><td class="num">${fmt(cur.totalSales)}</td></tr>
+          <tr class="tr-total"><td>合計</td><td>${cur.totalCount}件</td><td class="num">${fmt(cur.totalSales)}</td></tr>
         </tbody>
       </table>`;
-  }catch(e){toast('集計取得エラー',true);}
+  } catch(e) { toast('集計取得エラー',true); }
 }
 
 function renderDailyChart(data) {
-  if(!data.days)return;
-  const labels=data.days.map(d=>`${d.day}`);
-  const vals=data.days.map(d=>d.total);
+  if (!data.days) return;
   const ctx=document.getElementById('daily-chart').getContext('2d');
-  if(dailyChartObj)dailyChartObj.destroy();
+  if (chartDaily) chartDaily.destroy();
   const grad=ctx.createLinearGradient(0,0,0,180);
-  grad.addColorStop(0,'rgba(37,99,235,0.18)');grad.addColorStop(1,'rgba(37,99,235,0.01)');
-  dailyChartObj=new Chart(ctx,{
+  grad.addColorStop(0,'rgba(15,23,42,0.12)'); grad.addColorStop(1,'rgba(15,23,42,0.01)');
+  chartDaily=new Chart(ctx,{
     type:'line',
-    data:{labels,datasets:[{data:vals,borderColor:'#2563eb',backgroundColor:grad,fill:true,tension:0.3,pointRadius:vals.map(v=>v>0?3:0),pointBackgroundColor:'#2563eb',borderWidth:2.5}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a202c',callbacks:{title:t=>`${t[0].label}日`,label:c=>'¥'+Number(c.raw).toLocaleString()}}},scales:{x:{grid:{display:false},ticks:{font:{size:9},color:'#94a3b8',maxTicksLimit:12}},y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:9},color:'#94a3b8',callback:v=>v===0?'':fmtS(v)}}}}
+    data:{labels:data.days.map(d=>`${d.day}`),datasets:[{data:data.days.map(d=>d.total),borderColor:'#0f172a',backgroundColor:grad,fill:true,tension:0.35,pointRadius:data.days.map(d=>d.total>0?3:0),pointBackgroundColor:'#0f172a',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f172a',titleFont:{size:11},bodyFont:{size:13,weight:'bold'},callbacks:{title:t=>`${t[0].label}日`,label:c=>'¥'+Number(c.raw).toLocaleString()}}},scales:{x:{grid:{display:false},ticks:{font:{size:9},color:'#a0aab4',maxTicksLimit:12}},y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:9},color:'#a0aab4',callback:v=>v===0?'':fmtS(v)}}}}
   });
 }
 
@@ -822,138 +759,86 @@ async function loadCompareChart(y,m) {
   for(let i=2;i>=0;i--){let mm=m-i,yy=y;if(mm<=0){mm+=12;yy--;}months.push({y:yy,m:mm});}
   const results=await Promise.all(months.map(({y,m})=>GET('/api/getMonthStats',{year:y,month:m})));
   const ctx=document.getElementById('compare-chart').getContext('2d');
-  if(compareChartObj)compareChartObj.destroy();
-  compareChartObj=new Chart(ctx,{
+  if (chartCompare) chartCompare.destroy();
+  chartCompare=new Chart(ctx,{
     type:'bar',
-    data:{
-      labels:months.map(({m},i)=>i===months.length-1?`${m}月（今月）`:`${m}月`),
-      datasets:[{data:results.map(r=>r.totalSales),backgroundColor:months.map((_,i)=>i===months.length-1?'#2563eb':'#bfdbfe'),borderRadius:8,borderSkipped:false}]
-    },
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a202c',callbacks:{label:c=>'¥'+Number(c.raw).toLocaleString()}}},scales:{x:{grid:{display:false},ticks:{font:{size:12,weight:'600'},color:'#475569'}},y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:9},color:'#94a3b8',callback:v=>v===0?'0':fmtS(v)}}}}
+    data:{labels:months.map(({m},i)=>i===months.length-1?`${m}月（今月）`:`${m}月`),datasets:[{data:results.map(r=>r.totalSales),backgroundColor:months.map((_,i)=>i===months.length-1?'#0f172a':'#d4dae3'),borderRadius:7,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f172a',callbacks:{label:c=>'¥'+Number(c.raw).toLocaleString()}}},scales:{x:{grid:{display:false},ticks:{font:{size:12,weight:'600'},color:'#4a5568'}},y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:9},color:'#a0aab4',callback:v=>v===0?'0':fmtS(v)}}}}
   });
 }
 
-// ===== 日別ビュー =====
+// ===== 日別 =====
 function updateDayLabel() { document.getElementById('day-month-label').textContent=`${dayYear}年${dayMonth}月`; }
-
 function changeDayMonth(d) {
-  dayMonth+=d;
-  if(dayMonth>12){dayMonth=1;dayYear++;}
-  if(dayMonth<1){dayMonth=12;dayYear--;}
-  updateDayLabel();
-  loadDayStats();
+  dayMonth+=d; if(dayMonth>12){dayMonth=1;dayYear++;} if(dayMonth<1){dayMonth=12;dayYear--;} updateDayLabel(); loadDayStats();
 }
 
 async function loadDayStats() {
-  const el=document.getElementById('day-table');
-  el.innerHTML='<span class="spinner"></span>';
-  try{
+  const el=document.getElementById('day-table'); el.innerHTML='<span class="spinner"></span>';
+  try {
     const data=await GET('/api/getDailyBreakdown',{year:dayYear,month:dayMonth});
-    if(!data.days){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--sub2);">データなし</div>';return;}
-    const activeDays=data.days.filter(d=>d.total>0);
-    if(!activeDays.length){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--sub2);">この月の記録はありません</div>';return;}
-    const totalSales=activeDays.reduce((a,d)=>a+d.total,0);
-    const totalCount=activeDays.reduce((a,d)=>a+d.count,0);
-    el.innerHTML=`
-      <table class="tbl">
-        <thead><tr><th>日付</th><th class="right">件数</th><th class="right">新規</th><th class="right">常連</th><th class="right">合計</th></tr></thead>
-        <tbody>
-          ${activeDays.map(d=>`
-            <tr>
-              <td style="font-weight:700;">${dayMonth}/${d.day}</td>
-              <td class="right" style="color:var(--sub);">${d.count}件</td>
-              <td class="right">${d.shinki>0?fmt(d.shinki):'—'}</td>
-              <td class="right">${d.joren>0?fmt(d.joren):'—'}</td>
-              <td class="num">${fmt(d.total)}</td>
-            </tr>
-          `).join('')}
-          <tr class="total-row">
-            <td>合計</td>
-            <td class="right">${totalCount}件</td>
-            <td></td><td></td>
-            <td class="num">${fmt(totalSales)}</td>
-          </tr>
-        </tbody>
-      </table>`;
-  }catch(e){el.innerHTML='<div style="padding:18px;text-align:center;color:var(--red);">取得エラー</div>';}
+    const active=(data.days||[]).filter(d=>d.total>0);
+    if (!active.length) { el.innerHTML='<div style="padding:20px;text-align:center;color:var(--sub2);">この月の記録はありません</div>'; return; }
+    const totalSales=active.reduce((a,d)=>a+d.total,0), totalCount=active.reduce((a,d)=>a+d.count,0);
+    el.innerHTML=`<table class="tbl">
+      <thead><tr><th>日付</th><th class="right">件数</th><th class="right">新規</th><th class="right">常連</th><th class="right">合計</th></tr></thead>
+      <tbody>
+        ${active.map(d=>`<tr><td style="font-weight:700;">${dayMonth}/${d.day}</td><td class="right" style="color:var(--sub);">${d.count}件</td><td class="right">${d.shinki>0?fmt(d.shinki):'—'}</td><td class="right">${d.joren>0?fmt(d.joren):'—'}</td><td class="num">${fmt(d.total)}</td></tr>`).join('')}
+        <tr class="tr-total"><td>合計</td><td class="right">${totalCount}件</td><td></td><td></td><td class="num">${fmt(totalSales)}</td></tr>
+      </tbody>
+    </table>`;
+  } catch(e) { el.innerHTML='<div style="padding:18px;text-align:center;color:var(--neg);">取得エラー</div>'; }
 }
 
-// ===== 年別ビュー =====
+// ===== 年別 =====
 async function loadYearStats() {
   const y=selectedYear;
-  try{
-    const months=Array.from({length:12},(_,i)=>i+1);
-    const results=await Promise.all(months.map(m=>GET('/api/getMonthStats',{year:y,month:m})));
-    const totalSales=results.reduce((a,r)=>a+r.totalSales,0);
-    const totalCount=results.reduce((a,r)=>a+r.totalCount,0);
-    const shinkiSales=results.reduce((a,r)=>a+r.shinkiSales,0);
-    const shinkiCount=results.reduce((a,r)=>a+r.shinkiCount,0);
-    const jorenSales=results.reduce((a,r)=>a+r.jorenSales,0);
-    const jorenCount=results.reduce((a,r)=>a+r.jorenCount,0);
-    const unit=totalCount>0?Math.round(totalSales/totalCount):0;
+  try {
+    const results=await Promise.all(Array.from({length:12},(_,i)=>GET('/api/getMonthStats',{year:y,month:i+1})));
+    const totalSales=results.reduce((a,r)=>a+r.totalSales,0), totalCount=results.reduce((a,r)=>a+r.totalCount,0);
+    const shinkiSales=results.reduce((a,r)=>a+r.shinkiSales,0), shinkiCount=results.reduce((a,r)=>a+r.shinkiCount,0);
+    const jorenSales=results.reduce((a,r)=>a+r.jorenSales,0),  jorenCount=results.reduce((a,r)=>a+r.jorenCount,0);
     document.getElementById('y-total').textContent=fmt(totalSales);
     document.getElementById('y-count').textContent=totalCount;
-    document.getElementById('y-unit').textContent=fmt(unit);
-    document.getElementById('y-shinki').textContent=fmt(shinkiSales);
-    document.getElementById('y-shinki-c').textContent=`${shinkiCount}件`;
-    document.getElementById('y-joren').textContent=fmt(jorenSales);
-    document.getElementById('y-joren-c').textContent=`${jorenCount}件`;
-    // 年別グラフ
+    document.getElementById('y-unit').textContent=fmt(totalCount>0?Math.round(totalSales/totalCount):0);
+    document.getElementById('y-shinki').textContent=fmt(shinkiSales); document.getElementById('y-shinki-c').textContent=`${shinkiCount}件`;
+    document.getElementById('y-joren').textContent=fmt(jorenSales);   document.getElementById('y-joren-c').textContent=`${jorenCount}件`;
     const ctx=document.getElementById('year-chart').getContext('2d');
-    if(yearChartObj)yearChartObj.destroy();
-    const grad=ctx.createLinearGradient(0,0,0,180);
-    grad.addColorStop(0,'rgba(37,99,235,0.15)');grad.addColorStop(1,'rgba(37,99,235,0.01)');
-    yearChartObj=new Chart(ctx,{
+    if (chartYear) chartYear.destroy();
+    chartYear=new Chart(ctx,{
       type:'bar',
       data:{
-        labels:months.map(m=>`${m}月`),
+        labels:Array.from({length:12},(_,i)=>`${i+1}月`),
         datasets:[
-          {label:'新規',data:results.map(r=>r.shinkiSales),backgroundColor:'#2563eb',borderRadius:4,borderSkipped:false,stack:'s'},
-          {label:'常連',data:results.map(r=>r.jorenSales),backgroundColor:'#bfdbfe',borderRadius:4,borderSkipped:false,stack:'s'},
-          {label:'その他',data:results.map(r=>r.otherSales),backgroundColor:'#fde68a',borderRadius:4,borderSkipped:false,stack:'s'}
+          {label:'新規',data:results.map(r=>r.shinkiSales),backgroundColor:'#0f172a',borderRadius:4,borderSkipped:false,stack:'s'},
+          {label:'常連',data:results.map(r=>r.jorenSales),backgroundColor:'#94a3b8',borderRadius:4,borderSkipped:false,stack:'s'},
+          {label:'その他',data:results.map(r=>r.otherSales),backgroundColor:'#e2e8f0',borderRadius:4,borderSkipped:false,stack:'s'}
         ]
       },
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},usePointStyle:true,pointStyle:'circle',boxWidth:8,padding:12}},tooltip:{backgroundColor:'#1a202c',callbacks:{label:c=>`${c.dataset.label}: ¥${Number(c.raw).toLocaleString()}`}}},scales:{x:{grid:{display:false},ticks:{font:{size:10},color:'#64748b'}},y:{stacked:true,beginAtZero:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:9},color:'#94a3b8',callback:v=>v===0?'0':fmtS(v)}}}}
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},usePointStyle:true,pointStyle:'circle',boxWidth:8,padding:14}},tooltip:{backgroundColor:'#0f172a',callbacks:{label:c=>`${c.dataset.label}: ¥${Number(c.raw).toLocaleString()}`}}},scales:{x:{grid:{display:false},ticks:{font:{size:10},color:'#6e7a8a'},stacked:true},y:{stacked:true,beginAtZero:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:9},color:'#a0aab4',callback:v=>v===0?'0':fmtS(v)}}}}
     });
-    // 月別テーブル
-    document.getElementById('year-table').innerHTML=`
-      <table class="tbl">
-        <thead><tr><th>月</th><th class="right">件数</th><th class="right">新規</th><th class="right">常連</th><th class="right">合計</th></tr></thead>
-        <tbody>
-          ${results.map((r,i)=>r.totalCount>0?`
-            <tr>
-              <td style="font-weight:700;">${i+1}月</td>
-              <td class="right" style="color:var(--sub);">${r.totalCount}件</td>
-              <td class="right">${r.shinkiSales>0?fmt(r.shinkiSales):'—'}</td>
-              <td class="right">${r.jorenSales>0?fmt(r.jorenSales):'—'}</td>
-              <td class="num">${fmt(r.totalSales)}</td>
-            </tr>
-          `:'').join('')}
-          <tr class="total-row">
-            <td>合計</td>
-            <td class="right">${totalCount}件</td>
-            <td class="right">${fmt(shinkiSales)}</td>
-            <td class="right">${fmt(jorenSales)}</td>
-            <td class="num">${fmt(totalSales)}</td>
-          </tr>
-        </tbody>
-      </table>`;
-  }catch(e){toast('年別集計エラー',true);}
+    document.getElementById('year-table').innerHTML=`<table class="tbl">
+      <thead><tr><th>月</th><th class="right">件数</th><th class="right">新規</th><th class="right">常連</th><th class="right">合計</th></tr></thead>
+      <tbody>
+        ${results.map((r,i)=>r.totalCount>0?`<tr><td style="font-weight:700;">${i+1}月</td><td class="right" style="color:var(--sub);">${r.totalCount}件</td><td class="right">${r.shinkiSales>0?fmt(r.shinkiSales):'—'}</td><td class="right">${r.jorenSales>0?fmt(r.jorenSales):'—'}</td><td class="num">${fmt(r.totalSales)}</td></tr>`:'').join('')}
+        <tr class="tr-total"><td>合計</td><td class="right">${totalCount}件</td><td class="right">${fmt(shinkiSales)}</td><td class="right">${fmt(jorenSales)}</td><td class="num">${fmt(totalSales)}</td></tr>
+      </tbody>
+    </table>`;
+  } catch(e) { toast('年別集計エラー',true); }
 }
 
 // ===== 経理 =====
 async function loadAccounting() {
-  const y=parseInt(document.getElementById('acc-year').value);
-  const m=parseInt(document.getElementById('acc-month').value);
+  const y=parseInt(document.getElementById('acc-year').value), m=parseInt(document.getElementById('acc-month').value);
   document.getElementById('acc-report').innerHTML='<span class="spinner"></span>';
-  try{
+  try {
     const d=await GET('/api/getMonthReport',{year:y,month:m});
     const s=d.summary;
     const groups={};d.records.forEach(r=>{(groups[r.date]=groups[r.date]||[]).push(r);});
     document.getElementById('acc-report').innerHTML=`
       <div class="card card-pad gap" style="text-align:center;">
-        <div style="font-size:20px;font-weight:900;letter-spacing:-.3px;">あまと整体院 月次レポート</div>
-        <div style="color:var(--sub);margin-top:4px;font-size:14px;">${d.year}年${d.month}月</div>
+        <div style="font-size:19px;font-weight:900;color:var(--navy);letter-spacing:-.4px;">あまと整体院 月次レポート</div>
+        <div style="color:var(--sub);margin-top:4px;font-size:13px;">${d.year}年${d.month}月</div>
       </div>
       <div class="card gap">
         <table class="tbl">
@@ -962,7 +847,7 @@ async function loadAccounting() {
             <tr><td><span class="badge badge-shinki">新規</span></td><td>${s.shinkiCount}件</td><td class="num">${fmt(s.shinkiSales)}</td></tr>
             <tr><td><span class="badge badge-joren">常連</span></td><td>${s.jorenCount}件</td><td class="num">${fmt(s.jorenSales)}</td></tr>
             ${s.otherCount>0?`<tr><td><span class="badge badge-other">その他</span></td><td>${s.otherCount}件</td><td class="num">${fmt(s.otherSales)}</td></tr>`:''}
-            <tr class="total-row"><td>合計</td><td>${s.totalCount}件</td><td class="num">${fmt(s.totalSales)}</td></tr>
+            <tr class="tr-total"><td>合計</td><td>${s.totalCount}件</td><td class="num">${fmt(s.totalSales)}</td></tr>
           </tbody>
         </table>
       </div>
@@ -971,34 +856,26 @@ async function loadAccounting() {
         <div style="padding:0 18px 12px;">
           ${Object.entries(groups).map(([date,items])=>`
             <div style="margin-bottom:16px;">
-              <div style="font-size:12px;font-weight:700;color:var(--sub);padding:8px 0 6px;border-bottom:1.5px solid var(--border);">
-                ${date}　<span style="color:var(--blue);font-weight:900;">${fmt(items.reduce((a,r)=>a+r.amount,0))}</span>　<span style="color:var(--sub2);">${items.length}件</span>
+              <div style="font-size:12px;font-weight:700;color:var(--sub);padding:8px 0 6px;border-bottom:1px solid var(--border);">
+                ${date}　<span style="color:var(--navy);font-weight:900;">${fmt(items.reduce((a,r)=>a+r.amount,0))}</span>　<span style="color:var(--sub2);">${items.length}件</span>
               </div>
-              ${items.map(r=>`
-                <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f8fafc;">
-                  <span style="font-size:12px;color:var(--sub2);width:40px;">${r.time}</span>
-                  <span class="badge ${r.type==='新規'?'badge-shinki':r.type==='常連'?'badge-joren':'badge-other'}">${esc(r.type)}</span>
-                  <span style="font-weight:800;font-size:15px;flex:1;text-align:right;">${fmt(r.amount)}</span>
-                </div>
-              `).join('')}
-            </div>
-          `).join('')}
-          ${!d.records.length?'<div style="text-align:center;color:var(--sub2);padding:24px 0;font-size:14px;">この月のデータがありません</div>':''}
+              ${items.map(r=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f8f9fb;">
+                <span style="font-size:12px;color:var(--sub2);width:38px;">${r.time}</span>
+                <span class="badge ${r.type==='新規'?'badge-shinki':r.type==='常連'?'badge-joren':'badge-other'}">${esc(r.type)}</span>
+                <span style="font-weight:800;font-size:15px;flex:1;text-align:right;">${fmt(r.amount)}</span>
+              </div>`).join('')}
+            </div>`).join('')}
+          ${!d.records.length?'<div style="text-align:center;color:var(--sub2);padding:24px 0;">この月のデータがありません</div>':''}
         </div>
       </div>`;
-  }catch(e){toast('レポート取得エラー',true);}
+  } catch(e) { toast('レポート取得エラー',true); }
 }
 
 function downloadCsv() {
-  const y=document.getElementById('acc-year').value;
-  const m=document.getElementById('acc-month').value;
-  window.open(API+`/api/getCsv?year=${y}&month=${m}`);
+  window.open(API+`/api/getCsv?year=${document.getElementById('acc-year').value}&month=${document.getElementById('acc-month').value}`);
 }
-
 function downloadCsvFrom() {
-  const y=document.getElementById('csv-year').value;
-  const m=document.getElementById('csv-month').value;
-  window.open(API+`/api/getCsv?year=${y}&month=${m}`);
+  window.open(API+`/api/getCsv?year=${document.getElementById('csv-year').value}&month=${document.getElementById('csv-month').value}`);
 }
 
 init();
