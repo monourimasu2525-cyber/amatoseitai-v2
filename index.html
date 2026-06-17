@@ -2,1140 +2,716 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>あまと整体院 売上管理 v3</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>あまと整体院 売上管理</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-  :root {
-    --bg:       #f9fafb;
-    --card:     #ffffff;
-    --card2:    #f3f4f6;
-    --border:   #e5e7eb;
-    --text:     #1f2937;
-    --sub:      #6b7280;
-    --sub2:     #9ca3af;
-    --accent:   #1e2c3a;
-    --accent-l: #f0f2f4;
-    --accent-m: #c8cdd4;
-    --green:    #16a34a;
-    --green-l:  #f0fdf4;
-    --green-m:  #bbf7d0;
-    --red:      #ef4444;
-    --red-l:    #fef2f2;
-    --orange:   #f59e0b;
-    --shadow:   0 1px 3px rgba(0,0,0,0.07),0 1px 2px rgba(0,0,0,0.04);
-  }
-  *{-webkit-tap-highlight-color:transparent;box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Meiryo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
-  .page{display:none;} .page.active{display:block;}
-  .card{background:var(--card);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);}
-  .btn-primary{background:var(--accent);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:filter .15s;}
-  .btn-primary:active{filter:brightness(1.2);}
-  .btn-secondary{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;font-weight:500;cursor:pointer;}
-  .btn-secondary:active{background:var(--card2);}
-  .btn-danger{background:var(--red-l);color:var(--red);border:1px solid #fecaca;border-radius:8px;font-weight:500;cursor:pointer;}
-  .quick-btn{background:var(--card);border:1px solid var(--border);border-radius:10px;cursor:pointer;text-align:left;box-shadow:var(--shadow);transition:transform .1s;}
-  .quick-btn:active{transform:scale(0.98);}
-  .scrollbar-hide::-webkit-scrollbar{display:none;} .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none;}
-  .spinner{border:2px solid var(--accent-l);border-top:2px solid var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  .toast{transform:translateY(20px);opacity:0;transition:all .25s ease;pointer-events:none;}
-  .toast.show{transform:translateY(0);opacity:1;}
-  .modal{display:none;} .modal.open{display:flex;}
-  input,select{font-family:inherit;}
-  /* スケルトン */
-  .skel{background:linear-gradient(90deg,var(--card2) 25%,var(--border) 50%,var(--card2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px;}
-  @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+:root {
+  --bg:#f4f5f7; --card:#fff; --border:#e5e7eb; --text:#1a1f2e; --sub:#6b7280; --sub2:#9ca3af;
+  --accent:#1e2c3a; --accent-l:#eef0f2; --accent-m:#c8cdd4;
+  --green:#16a34a; --green-l:#f0fdf4; --red:#ef4444; --red-l:#fef2f2;
+  --nav-h:60px; --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Meiryo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
+button{font-family:inherit;cursor:pointer;}
+#nav{position:fixed;bottom:0;left:0;right:0;height:calc(var(--nav-h) + var(--safe-b));background:var(--card);border-top:1px solid var(--border);display:flex;align-items:stretch;z-index:100;box-shadow:0 -2px 12px rgba(0,0,0,0.08);}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:none;color:var(--sub2);font-size:10px;font-weight:500;padding-bottom:var(--safe-b);transition:color .15s;}
+.nav-btn.active{color:var(--accent);}
+.page{display:none;padding-bottom:calc(var(--nav-h) + var(--safe-b) + 16px);}
+.page.active{display:block;}
+.wrap{padding:16px;}
+.card{background:var(--card);border-radius:14px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,0.05);}
+.card-pad{padding:16px;}
+.section-title{font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.6px;text-transform:uppercase;margin-bottom:10px;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:10px;font-weight:600;font-size:14px;padding:12px 20px;transition:filter .15s,transform .1s;}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-secondary{background:var(--accent-l);color:var(--accent);border:1px solid var(--accent-m);}
+.btn-danger{background:var(--red-l);color:var(--red);border:1px solid #fecaca;}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:8px;}
+.btn-full{width:100%;}
+.form-group{margin-bottom:12px;}
+.form-label{display:block;font-size:12px;font-weight:600;color:var(--sub);margin-bottom:5px;}
+.form-control{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:15px;font-family:inherit;background:var(--card);color:var(--text);}
+.form-control:focus{outline:none;border-color:var(--accent);}
+select.form-control{appearance:none;}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.kpi-card{background:var(--card);border-radius:14px;border:1px solid var(--border);padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.05);}
+.kpi-label{font-size:11px;font-weight:600;color:var(--sub);margin-bottom:6px;}
+.kpi-value{font-size:22px;font-weight:800;color:var(--text);letter-spacing:-0.5px;line-height:1;}
+.kpi-sub{font-size:11px;color:var(--sub2);margin-top:4px;}
+.kpi-card.accent{background:var(--accent);border-color:var(--accent);}
+.kpi-card.accent .kpi-label,.kpi-card.accent .kpi-value,.kpi-card.accent .kpi-sub{color:#fff;}
+.quick-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+.quick-btn{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:var(--card);border:1.5px solid var(--border);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.quick-btn.primary{background:var(--accent);border-color:var(--accent);}
+.quick-btn.primary .q-name,.quick-btn.primary .q-amt{color:#fff;}
+.q-name{font-size:15px;font-weight:700;color:var(--text);}
+.q-amt{font-size:20px;font-weight:800;color:var(--sub);}
+.list-item{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);}
+.list-item:last-child{border-bottom:none;}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;flex-shrink:0;}
+.badge-shinki{background:var(--accent-l);color:var(--accent);border:1px solid var(--accent-m);}
+.badge-joren{background:#f3f4f6;color:var(--sub);border:1px solid var(--border);}
+.badge-other{background:#fef3c7;color:#92400e;border:1px solid #fde68a;}
+.page-header{background:var(--card);border-bottom:1px solid var(--border);padding:16px;position:sticky;top:0;z-index:50;}
+.page-header h1{font-size:18px;font-weight:800;}
+.page-header .sub{font-size:12px;color:var(--sub);margin-top:2px;}
+.tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+.tag-up{background:#dcfce7;color:#15803d;}
+.tag-down{background:#fee2e2;color:#b91c1c;}
+.tag-neutral{background:#f3f4f6;color:var(--sub);}
+#toast{position:fixed;bottom:calc(var(--nav-h) + var(--safe-b) + 12px);left:50%;transform:translateX(-50%) translateY(10px);background:#1a1f2e;color:#fff;font-size:13px;font-weight:500;padding:10px 20px;border-radius:100px;box-shadow:0 4px 20px rgba(0,0,0,0.25);white-space:nowrap;z-index:200;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:150;align-items:flex-end;justify-content:center;}
+.modal.open{display:flex;}
+.modal-box{background:var(--card);border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:500px;max-height:85vh;overflow-y:auto;}
+.modal-title{font-size:17px;font-weight:800;margin-bottom:20px;}
+.modal-footer{display:flex;gap:8px;margin-top:16px;}
+.spinner{width:20px;height:20px;border:2px solid var(--accent-l);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:24px auto;display:block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.stat-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;}
+.stat-card .val{font-size:16px;font-weight:800;color:var(--text);}
+.stat-card .lbl{font-size:10px;color:var(--sub);margin-top:3px;}
+.month-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:16px;}
+.month-nav .month-label{font-size:17px;font-weight:800;}
+.month-nav button{background:var(--accent-l);border:1px solid var(--accent-m);color:var(--accent);border-radius:8px;padding:6px 14px;font-weight:600;font-size:13px;}
+.progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:6px;}
+.progress-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .4s;}
+.data-table{width:100%;border-collapse:collapse;font-size:13px;}
+.data-table th{background:var(--accent-l);color:var(--sub);font-size:11px;font-weight:600;padding:8px 10px;text-align:left;}
+.data-table td{padding:9px 10px;border-top:1px solid var(--border);}
+.chart-wrap{position:relative;height:180px;margin:8px 0;}
+@media print{#nav,#toast,.no-print{display:none!important;}.page{display:block!important;padding-bottom:0;}.page:not(#page-accounting){display:none!important;}}
 </style>
 </head>
 <body>
 
-<!-- ヘッダー -->
-<header style="background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:30;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-  <div style="max-width:480px;margin:0 auto;padding:0 16px;height:52px;display:flex;align-items:center;justify-content:space-between;">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <div style="width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      </div>
-      <div>
-        <div style="font-weight:700;font-size:14px;line-height:1.2;">あまと整体院</div>
-        <div style="font-size:10px;color:var(--sub2);">売上管理</div>
-      </div>
-    </div>
-    <div id="headerDate" style="font-size:12px;color:var(--sub);background:var(--card2);padding:4px 10px;border-radius:20px;border:1px solid var(--border);"></div>
-  </div>
-</header>
-
-<!-- ===== ホーム ===== -->
-<div id="page-home" class="page active" style="padding-bottom:72px;">
-  <!-- KPIバー -->
-  <div style="background:var(--card);border-bottom:1px solid var(--border);padding:12px 16px;">
-    <div class="scrollbar-hide" style="display:flex;gap:8px;overflow-x:auto;max-width:480px;margin:0 auto;">
-      <div style="min-width:148px;flex-shrink:0;background:var(--accent);border-radius:12px;padding:12px 14px;">
-        <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px;">今月売上</div>
-        <div id="kpi_month" style="font-size:18px;font-weight:800;color:#fff;letter-spacing:-0.5px;"><span class="skel" style="display:inline-block;width:80px;height:20px;opacity:0.3;"></span></div>
-        <div id="kpi_month_diff" style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:3px;"><span class="skel" style="display:inline-block;width:56px;height:12px;opacity:0.25;"></span></div>
-      </div>
-      <div style="min-width:126px;flex-shrink:0;" class="card">
-        <div style="padding:12px 13px;">
-          <div style="font-size:11px;color:var(--sub2);margin-bottom:4px;">今日の売上</div>
-          <div id="kpi_today" style="font-size:18px;font-weight:700;letter-spacing:-0.5px;"><span class="skel" style="display:inline-block;width:70px;height:20px;"></span></div>
-          <div id="kpi_today_count" style="font-size:11px;color:var(--sub2);margin-top:3px;"><span class="skel" style="display:inline-block;width:36px;height:12px;"></span></div>
-        </div>
-      </div>
-      <div style="min-width:108px;flex-shrink:0;" class="card">
-        <div style="padding:12px 13px;">
-          <div style="font-size:11px;color:var(--sub2);margin-bottom:4px;">新規</div>
-          <div id="kpi_shinki" style="font-size:18px;font-weight:700;letter-spacing:-0.5px;"><span class="skel" style="display:inline-block;width:64px;height:20px;"></span></div>
-          <div id="kpi_shinki_count" style="font-size:11px;color:var(--sub2);margin-top:3px;"><span class="skel" style="display:inline-block;width:28px;height:12px;"></span></div>
-        </div>
-      </div>
-      <div style="min-width:108px;flex-shrink:0;" class="card">
-        <div style="padding:12px 13px;">
-          <div style="font-size:11px;color:var(--sub2);margin-bottom:4px;">常連</div>
-          <div id="kpi_joren" style="font-size:18px;font-weight:700;letter-spacing:-0.5px;"><span class="skel" style="display:inline-block;width:64px;height:20px;"></span></div>
-          <div id="kpi_joren_count" style="font-size:11px;color:var(--sub2);margin-top:3px;"><span class="skel" style="display:inline-block;width:28px;height:12px;"></span></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div style="max-width:480px;margin:0 auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px;">
-    <!-- グラフ -->
-    <div class="card" style="padding:16px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <span style="font-size:13px;font-weight:700;">売上推移</span>
-        <div style="display:flex;gap:4px;">
-          <button id="pbtn7"  onclick="setPeriod(7)"  style="padding:4px 11px;border-radius:6px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:var(--accent);color:#fff;">7日</button>
-          <button id="pbtn15" onclick="setPeriod(15)" style="padding:4px 11px;border-radius:6px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:var(--card2);color:var(--sub);">15日</button>
-          <button id="pbtn30" onclick="setPeriod(30)" style="padding:4px 11px;border-radius:6px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:var(--card2);color:var(--sub);">30日</button>
-        </div>
-      </div>
-      <div id="trendSpinner" style="display:flex;justify-content:center;padding:24px 0;"><div class="spinner" style="width:24px;height:24px;"></div></div>
-      <div id="trendWrap" style="height:148px;display:none;"><canvas id="trendChart"></canvas></div>
-    </div>
-
-    <!-- 記録する -->
-    <div class="card" style="padding:16px;">
-      <div style="font-size:12px;color:var(--sub);margin-bottom:10px;font-weight:500;">記録する</div>
-      <div id="quickBtns" style="display:flex;flex-direction:column;gap:8px;">
-        <div style="display:flex;justify-content:center;padding:12px;"><div class="spinner" style="width:20px;height:20px;"></div></div>
-      </div>
-    </div>
-
-    <!-- 今日の記録 -->
-    <div class="card" style="padding:16px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <span style="font-size:13px;font-weight:700;">今日の記録</span>
-        <span id="todayBadge" style="font-size:11px;background:var(--accent-l);color:var(--accent);padding:3px 10px;border-radius:20px;font-weight:600;border:1px solid var(--accent-m);">0件</span>
-      </div>
-      <div id="todayList" style="font-size:13px;">
-        <div class="skel" style="height:38px;margin-bottom:8px;"></div>
-        <div class="skel" style="height:38px;margin-bottom:8px;opacity:0.7;"></div>
-        <div class="skel" style="height:38px;opacity:0.4;"></div>
-      </div>
-      <div style="text-align:right;margin-top:8px;">
-        <button onclick="switchPage('input')" style="font-size:12px;color:var(--sub);background:none;border:none;cursor:pointer;">すべて見る →</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ===== 入力 ===== -->
-<div id="page-input" class="page" style="padding-bottom:72px;">
-  <div style="max-width:480px;margin:0 auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px;">
-    <div class="card" style="padding:16px;">
-      <div style="font-size:13px;font-weight:700;margin-bottom:14px;">売上入力</div>
-      <div style="margin-bottom:10px;">
-        <label style="font-size:11px;color:var(--sub);display:block;margin-bottom:5px;font-weight:500;">種別</label>
-        <select id="inputType" onchange="autoFillAmount()" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;"></select>
-      </div>
-      <div style="margin-bottom:16px;">
-        <label style="font-size:11px;color:var(--sub);display:block;margin-bottom:5px;font-weight:500;">金額（円）</label>
-        <input id="inputAmount" type="number" inputmode="numeric" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;">
-      </div>
-      <button id="addSaleBtn" class="btn-primary" style="width:100%;padding:13px;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;">
-        <span>登録する</span>
-        <div id="addSaleSpinner" class="spinner" style="display:none;width:16px;height:16px;border-color:rgba(255,255,255,0.3);border-top-color:#fff;"></div>
-      </button>
-    </div>
-
-    <div class="card" style="padding:16px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <span style="font-size:13px;font-weight:700;">直近30日の履歴</span>
-        <div id="histSpinner" class="spinner" style="display:none;width:16px;height:16px;"></div>
-      </div>
-      <div id="historyList" style="font-size:13px;color:var(--sub2);">読込中…</div>
-    </div>
-  </div>
-</div>
-
-<!-- ===== 集計（レポート） ===== -->
-<div id="page-stats" class="page" style="padding-bottom:72px;">
-  <div style="max-width:480px;margin:0 auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px;">
-
-    <!-- ① 今月まとめカード -->
-    <div style="background:var(--accent);border-radius:14px;padding:20px 18px;box-shadow:0 2px 10px rgba(30,44,58,0.2);">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <span id="statsMonthLabel" style="font-size:11px;color:rgba(255,255,255,0.5);font-weight:500;">— 年 — 月</span>
-        <div id="statsTopSpinner" class="spinner" style="display:none;width:14px;height:14px;border-color:rgba(255,255,255,0.2);border-top-color:rgba(255,255,255,0.8);"></div>
-      </div>
-      <div id="statsTotalSales" style="font-size:34px;font-weight:800;color:#fff;letter-spacing:-1px;line-height:1.1;margin-bottom:6px;">—</div>
-      <div style="display:flex;gap:16px;margin-bottom:14px;">
-        <div>
-          <span style="font-size:11px;color:rgba(255,255,255,0.45);">先月比</span>
-          <span id="statsDiff" style="font-size:13px;font-weight:700;margin-left:4px;color:rgba(255,255,255,0.7);">—</span>
-        </div>
-        <div>
-          <span style="font-size:11px;color:rgba(255,255,255,0.45);">件数</span>
-          <span id="statsTotalCount" style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.9);margin-left:4px;">—</span>
-        </div>
-        <div>
-          <span style="font-size:11px;color:rgba(255,255,255,0.45);">客単価</span>
-          <span id="statsUnitPrice" style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.9);margin-left:4px;">—</span>
-        </div>
-      </div>
-      <div style="background:rgba(255,255,255,0.1);border-radius:8px;padding:10px 12px;border:1px solid rgba(255,255,255,0.1);">
-        <span style="font-size:12px;color:rgba(255,255,255,0.45);margin-right:6px;">💡</span>
-        <span id="statsSummaryText" style="font-size:13px;color:rgba(255,255,255,0.88);font-weight:500;">データを読み込んでいます…</span>
-      </div>
-    </div>
-
-    <!-- ② 推移グラフ＋傾向テキスト -->
-    <div class="card" style="padding:16px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-        <span style="font-size:13px;font-weight:700;">売上の流れ</span>
-        <span id="statsLineLabel" style="font-size:11px;color:var(--sub2);">今月 日別</span>
-      </div>
-      <div id="statsTrendText" style="font-size:12px;color:var(--sub);margin-bottom:12px;padding:8px 10px;background:var(--card2);border-radius:8px;border-left:3px solid var(--accent);">データを読込中…</div>
-      <div id="statsLineSpinner" style="display:flex;justify-content:center;padding:20px;"><div class="spinner" style="width:20px;height:20px;"></div></div>
-      <div id="statsLineWrap" style="height:140px;display:none;"><canvas id="statsLineChart"></canvas></div>
-    </div>
-
-    <!-- ③ 気づきカード 2×2 -->
-    <div id="insightGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <!-- 動的生成 -->
-    </div>
-
-    <!-- ④ 詳細（折りたたみ） -->
-    <div class="card" style="overflow:hidden;">
-      <button onclick="toggleDetail()" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:none;border:none;cursor:pointer;">
-        <span style="font-size:13px;font-weight:600;color:var(--sub);">期間変更・詳細データ</span>
-        <span id="detailArrow" style="font-size:12px;color:var(--sub2);">▼</span>
-      </button>
-      <div id="detailPanel" style="display:none;padding:0 16px 16px;border-top:1px solid var(--border);">
-        <div style="display:flex;gap:8px;align-items:center;margin:12px 0;">
-          <select id="statsYear" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none;flex:1;"></select>
-          <select id="statsMonth" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);outline:none;flex:1;"></select>
-          <button id="loadStatsBtn" class="btn-primary" style="padding:7px 14px;font-size:13px;flex-shrink:0;">表示</button>
-        </div>
-        <div style="font-size:12px;font-weight:600;color:var(--sub);margin-bottom:8px;">前月比較</div>
-        <div id="compareSpinner" style="display:flex;justify-content:center;padding:16px;"><div class="spinner" style="width:18px;height:18px;"></div></div>
-        <div id="compareWrap" style="height:120px;display:none;"><canvas id="compareChart"></canvas></div>
-        <div style="font-size:12px;font-weight:600;color:var(--sub);margin:12px 0 8px;">月次サマリー</div>
-        <div id="statsTable" style="font-size:13px;color:var(--sub2);">—</div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- ===== 設定 ===== -->
-<div id="page-settings" class="page" style="padding-bottom:72px;">
-  <div style="max-width:480px;margin:0 auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px;">
-
-    <!-- マスタ -->
-    <div class="card">
-      <div style="padding:14px 16px 10px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <div style="font-size:13px;font-weight:700;">売上マスタ</div>
-          <div id="masterSpinner" class="spinner" style="display:none;width:16px;height:16px;"></div>
-        </div>
-        <div style="font-size:11px;color:var(--sub2);margin-top:3px;">クイック入力・種別選択に反映されます</div>
-      </div>
-      <div id="masterList" style="padding:0 16px;font-size:13px;color:var(--sub2);">読込中…</div>
-      <div style="padding:12px 16px 16px;border-top:1px solid var(--border);margin-top:8px;">
-        <div style="font-size:12px;font-weight:600;color:var(--sub);margin-bottom:8px;">＋ 追加</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-          <input id="newMasterType" type="text" placeholder="種別名" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--text);outline:none;">
-          <input id="newMasterAmount" type="number" placeholder="金額" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--text);outline:none;">
-        </div>
-        <input id="newMasterDesc" type="text" placeholder="説明（任意）" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--text);outline:none;margin-bottom:8px;">
-        <button id="addMasterBtn" class="btn-primary" style="width:100%;padding:11px;font-size:13px;">追加する</button>
-      </div>
-    </div>
-
-    <!-- 経理 -->
-    <div class="card" style="padding:16px;">
-      <div style="font-size:13px;font-weight:700;margin-bottom:12px;">経理シート生成</div>
-      <div style="display:flex;gap:8px;margin-bottom:10px;">
-        <select id="accYear" style="flex:1;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--text);outline:none;"></select>
-        <select id="accMonth" style="flex:1;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--text);outline:none;"></select>
-      </div>
-      <button id="genAccBtn" class="btn-secondary" style="width:100%;padding:11px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;">
-        <span id="genAccBtnText">経理シートを生成する</span>
-        <div id="genAccSpinner" class="spinner" style="display:none;width:14px;height:14px;"></div>
-      </button>
-      <div id="accResult" style="display:none;margin-top:10px;">
-        <div style="background:var(--green-l);border:1px solid var(--green-m);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--green);margin-bottom:8px;" id="accResultMsg"></div>
-        <a id="accSheetLink" href="#" target="_blank" style="display:block;text-align:center;font-size:12px;color:var(--accent);border:1px solid var(--accent-m);border-radius:8px;padding:10px;text-decoration:none;">スプレッドシートを開く →</a>
-      </div>
-    </div>
-
-</div>
-
-<!-- ボトムナビ -->
-<nav style="position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);z-index:20;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -1px 4px rgba(0,0,0,0.05);">
-  <div style="max-width:480px;margin:0 auto;display:flex;justify-content:space-around;height:56px;align-items:center;">
-    <button onclick="switchPage('home')" style="display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;padding:8px 20px;">
-      <svg id="ico-home" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      <span id="nl-home" style="font-size:10px;color:var(--accent);font-weight:700;">ホーム</span>
-    </button>
-    <button onclick="switchPage('input')" style="display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;padding:8px 20px;">
-      <svg id="ico-input" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--sub2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-      <span id="nl-input" style="font-size:10px;color:var(--sub2);font-weight:400;">入力</span>
-    </button>
-    <button onclick="switchPage('stats')" style="display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;padding:8px 20px;">
-      <svg id="ico-stats" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--sub2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-      <span id="nl-stats" style="font-size:10px;color:var(--sub2);font-weight:400;">集計</span>
-    </button>
-    <button onclick="switchPage('settings')" style="display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;padding:8px 20px;">
-      <svg id="ico-settings" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--sub2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      <span id="nl-settings" style="font-size:10px;color:var(--sub2);font-weight:400;">設定</span>
-    </button>
-  </div>
+<nav id="nav">
+  <button class="nav-btn active" id="nav-home" onclick="go('home')">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    ホーム
+  </button>
+  <button class="nav-btn" id="nav-input" onclick="go('input')">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    入力
+  </button>
+  <button class="nav-btn" id="nav-stats" onclick="go('stats')">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    集計
+  </button>
+  <button class="nav-btn" id="nav-accounting" onclick="go('accounting')">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    経理
+  </button>
+  <button class="nav-btn" id="nav-settings" onclick="go('settings')">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    設定
+  </button>
 </nav>
 
-<!-- 売上修正モーダル -->
-<div id="editModal" class="modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:50;align-items:flex-end;justify-content:center;">
-  <div style="background:var(--card);width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:20px;box-shadow:0 -4px 20px rgba(0,0,0,0.15);">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <span style="font-size:15px;font-weight:700;">売上修正</span>
-      <button id="closeEditModal" style="background:none;border:none;font-size:22px;color:var(--sub2);cursor:pointer;line-height:1;">×</button>
+<!-- ホーム -->
+<div id="page-home" class="page active">
+  <div class="page-header">
+    <h1>あまと整体院</h1>
+    <div class="sub" id="home-date"></div>
+  </div>
+  <div class="wrap">
+    <div class="kpi-grid">
+      <div class="kpi-card accent" style="grid-column:span 2;">
+        <div class="kpi-label">今日の売上</div>
+        <div class="kpi-value" id="kpi-today">—</div>
+        <div class="kpi-sub" id="kpi-today-sub">読み込み中…</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">新規</div>
+        <div class="kpi-value" id="kpi-shinki">—</div>
+        <div class="kpi-sub" id="kpi-shinki-sub"></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">常連</div>
+        <div class="kpi-value" id="kpi-joren">—</div>
+        <div class="kpi-sub" id="kpi-joren-sub"></div>
+      </div>
     </div>
-    <div style="margin-bottom:10px;">
-      <label style="font-size:11px;color:var(--sub);display:block;margin-bottom:5px;">種別</label>
-      <select id="editType" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;"></select>
+    <div class="card card-pad" style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span class="section-title" style="margin:0;">今月の売上</span>
+        <span id="kpi-month-diff" class="tag tag-neutral">—</span>
+      </div>
+      <div style="font-size:24px;font-weight:800;margin:8px 0 4px;" id="kpi-month">—</div>
+      <div style="font-size:11px;color:var(--sub);" id="kpi-month-sub"></div>
+      <div class="progress-bar"><div class="progress-fill" id="month-progress" style="width:0%"></div></div>
     </div>
-    <div style="margin-bottom:16px;">
-      <label style="font-size:11px;color:var(--sub);display:block;margin-bottom:5px;">金額（円）</label>
-      <input id="editAmount" type="number" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;">
+    <p class="section-title">クイック入力</p>
+    <div class="quick-grid" id="quick-btns"><span class="spinner"></span></div>
+    <p class="section-title">今日の記録</p>
+    <div class="card"><div id="today-list" style="padding:0 16px;"><span class="spinner"></span></div></div>
+  </div>
+</div>
+
+<!-- 入力 -->
+<div id="page-input" class="page">
+  <div class="page-header"><h1>売上入力</h1></div>
+  <div class="wrap">
+    <div class="card card-pad" style="margin-bottom:16px;">
+      <div class="form-group">
+        <label class="form-label">種別</label>
+        <select class="form-control" id="input-type"><option value="">種別を選択</option></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">金額</label>
+        <input type="number" class="form-control" id="input-amount" placeholder="金額を入力" inputmode="numeric">
+      </div>
+      <button class="btn btn-primary btn-full" id="add-sale-btn" onclick="addSale()">登録する</button>
     </div>
-    <input type="hidden" id="editId">
-    <button id="confirmEditBtn" class="btn-primary" style="width:100%;padding:13px;font-size:14px;">修正を保存する</button>
+    <p class="section-title">直近の履歴</p>
+    <div class="card"><div id="history-list" style="padding:0 16px;"><span class="spinner"></span></div></div>
+  </div>
+</div>
+
+<!-- 集計 -->
+<div id="page-stats" class="page">
+  <div class="page-header"><h1>集計</h1></div>
+  <div class="wrap">
+    <div class="month-nav">
+      <button onclick="changeStatsMonth(-1)">◀ 前月</button>
+      <span class="month-label" id="stats-month-label"></span>
+      <button onclick="changeStatsMonth(1)">翌月 ▶</button>
+    </div>
+    <div class="kpi-grid" style="margin-bottom:10px;">
+      <div class="kpi-card accent" style="grid-column:span 2;">
+        <div class="kpi-label">月間売上</div>
+        <div class="kpi-value" id="stats-total">—</div>
+        <div class="kpi-sub"><span id="stats-count"></span>件 / 客単価 <span id="stats-unit"></span></div>
+      </div>
+    </div>
+    <div class="stat-grid3">
+      <div class="stat-card"><div class="val" id="stats-shinki-sales">—</div><div class="lbl">新規売上</div><div style="font-size:10px;color:var(--sub2);margin-top:2px;" id="stats-shinki-count"></div></div>
+      <div class="stat-card"><div class="val" id="stats-joren-sales">—</div><div class="lbl">常連売上</div><div style="font-size:10px;color:var(--sub2);margin-top:2px;" id="stats-joren-count"></div></div>
+      <div class="stat-card"><div class="val" id="stats-diff" style="font-size:18px;">—</div><div class="lbl">先月比</div></div>
+    </div>
+    <div class="card card-pad" style="margin-bottom:16px;">
+      <p class="section-title">日別売上推移</p>
+      <div class="chart-wrap"><canvas id="daily-chart"></canvas></div>
+    </div>
+    <div class="card card-pad" style="margin-bottom:16px;">
+      <p class="section-title">3ヶ月比較</p>
+      <div class="chart-wrap" style="height:140px;"><canvas id="compare-chart"></canvas></div>
+    </div>
+    <div class="card card-pad">
+      <p class="section-title">内訳</p>
+      <div id="stats-table"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 経理 -->
+<div id="page-accounting" class="page">
+  <div class="page-header no-print"><h1>経理レポート</h1></div>
+  <div class="wrap">
+    <div class="card card-pad no-print" style="margin-bottom:16px;">
+      <div style="display:flex;gap:8px;align-items:flex-end;">
+        <div style="flex:1;"><label class="form-label">年</label><select class="form-control" id="acc-year"></select></div>
+        <div style="flex:1;"><label class="form-label">月</label><select class="form-control" id="acc-month"></select></div>
+        <button class="btn btn-primary" onclick="loadAccounting()" style="padding:11px 16px;">表示</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ 印刷</button>
+        <button class="btn btn-secondary btn-sm" onclick="downloadCsv()">📥 CSV</button>
+      </div>
+    </div>
+    <div id="acc-report"><div style="text-align:center;color:var(--sub);padding:40px 0;">月を選んで「表示」を押してください</div></div>
+  </div>
+</div>
+
+<!-- 設定 -->
+<div id="page-settings" class="page">
+  <div class="page-header"><h1>設定</h1></div>
+  <div class="wrap">
+    <p class="section-title">マスタ追加</p>
+    <div class="card card-pad" style="margin-bottom:16px;">
+      <div class="form-group"><label class="form-label">種別名</label><input type="text" class="form-control" id="new-type" placeholder="例：新規、常連"></div>
+      <div class="form-group"><label class="form-label">金額</label><input type="number" class="form-control" id="new-amount" placeholder="例：3270" inputmode="numeric"></div>
+      <div class="form-group"><label class="form-label">備考（任意）</label><input type="text" class="form-control" id="new-desc" placeholder="メモ"></div>
+      <button class="btn btn-primary btn-full" onclick="addMaster()">追加する</button>
+    </div>
+    <p class="section-title">マスタ一覧</p>
+    <div class="card" style="margin-bottom:16px;"><div id="master-list" style="padding:0 16px;"><span class="spinner"></span></div></div>
+    <p class="section-title">CSVエクスポート</p>
+    <div class="card card-pad">
+      <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:12px;">
+        <div style="flex:1;"><label class="form-label">年</label><select class="form-control" id="csv-year"></select></div>
+        <div style="flex:1;"><label class="form-label">月</label><select class="form-control" id="csv-month"></select></div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary btn-sm" onclick="downloadCsvFrom()">月別CSV</button>
+        <button class="btn btn-secondary btn-sm" onclick="window.open(API+'/api/getCsv')">全データCSV</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 売上編集モーダル -->
+<div class="modal" id="edit-modal">
+  <div class="modal-box">
+    <div class="modal-title">売上を編集</div>
+    <input type="hidden" id="edit-id">
+    <div class="form-group"><label class="form-label">種別</label><select class="form-control" id="edit-type"></select></div>
+    <div class="form-group"><label class="form-label">金額</label><input type="number" class="form-control" id="edit-amount" inputmode="numeric"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" style="flex:1;" onclick="closeModal('edit-modal')">キャンセル</button>
+      <button class="btn btn-primary" style="flex:2;" onclick="confirmEdit()">保存する</button>
+    </div>
   </div>
 </div>
 
 <!-- マスタ編集モーダル -->
-<div id="editMasterModal" class="modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:50;align-items:flex-end;justify-content:center;">
-  <div style="background:var(--card);width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:20px;box-shadow:0 -4px 20px rgba(0,0,0,0.15);">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <span style="font-size:15px;font-weight:700;">マスタ編集</span>
-      <button id="closeEditMasterModal" style="background:none;border:none;font-size:22px;color:var(--sub2);cursor:pointer;line-height:1;">×</button>
+<div class="modal" id="edit-master-modal">
+  <div class="modal-box">
+    <div class="modal-title">マスタを編集</div>
+    <input type="hidden" id="edit-master-id">
+    <div class="form-group"><label class="form-label">種別名</label><input type="text" class="form-control" id="edit-master-type"></div>
+    <div class="form-group"><label class="form-label">金額</label><input type="number" class="form-control" id="edit-master-amount" inputmode="numeric"></div>
+    <div class="form-group"><label class="form-label">備考</label><input type="text" class="form-control" id="edit-master-desc"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" style="flex:1;" onclick="closeModal('edit-master-modal')">キャンセル</button>
+      <button class="btn btn-primary" style="flex:2;" onclick="confirmEditMaster()">保存する</button>
     </div>
-    <div style="margin-bottom:10px;">
-      <label style="font-size:11px;color:var(--sub);display:block;margin-bottom:5px;">種別名</label>
-      <input id="editMasterType" type="text" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;">
-    </div>
-    <div style="margin-bottom:10px;">
-      <label style="font-size:11px;color:var(--sub);display:block;margin-bottom:5px;">金額（円）</label>
-      <input id="editMasterAmount" type="number" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;">
-    </div>
-    <div style="margin-bottom:16px;">
-      <label style="font-size:11px;color:var(--sub);display:block;margin-bottom:5px;">説明（任意）</label>
-      <input id="editMasterDesc" type="text" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--text);outline:none;">
-    </div>
-    <input type="hidden" id="editMasterId">
-    <button id="confirmEditMasterBtn" class="btn-primary" style="width:100%;padding:13px;font-size:14px;">更新する</button>
   </div>
 </div>
 
-<!-- トースト -->
-<div id="toast" class="toast" style="position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(20px);background:#1f2937;color:#fff;font-size:13px;padding:10px 20px;border-radius:100px;box-shadow:0 4px 16px rgba(0,0,0,0.2);white-space:nowrap;z-index:60;">
-  <span id="toastMsg"></span>
-</div>
+<div id="toast"></div>
 
 <script>
-const API_URL = 'https://amatoseitai-v2-production.up.railway.app';
-
-
-let masterItems = [];
-let trendChartObj = null, statsLineObj = null, compareChartObj = null;
-let trendAllLabels = [], trendAllData = [];
-let currentPeriod = 7;
-let detailOpen = false;
-
-// ===== ユーティリティ =====
+const API = 'https://amatoseitai-v2-production.up.railway.app';
 const fmt = n => '¥' + Number(n).toLocaleString();
-const escQ = s => String(s).replace(/'/g, "\\'");
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/'/g,"\\'");
 
-function showToast(msg, isErr=false) {
+function toast(msg, err=false) {
   const el = document.getElementById('toast');
-  document.getElementById('toastMsg').textContent = msg;
-  el.style.background = isErr ? '#ef4444' : '#1f2937';
+  el.textContent = msg;
+  el.style.background = err ? '#ef4444' : '#1a1f2e';
   el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 3000);
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3000);
 }
 
-async function api(method, path, body={}) {
-  const r = await fetch(API_URL + path, { method, headers:{'Content-Type':'application/json'}, body: method!=='GET' ? JSON.stringify(body) : undefined });
+async function GET(path, params={}) {
+  const qs = Object.keys(params).length ? '?'+new URLSearchParams(params) : '';
+  const r = await fetch(API + path + qs);
   return r.json();
 }
-async function apiGet(path, params={}) {
-  const qs = Object.keys(params).length ? '?' + new URLSearchParams(params) : '';
-  const r = await fetch(API_URL + path + qs);
+async function POST(path, body) {
+  const r = await fetch(API+path, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  return r.json();
+}
+async function PUT(path, body) {
+  const r = await fetch(API+path, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  return r.json();
+}
+async function DEL(path) {
+  const r = await fetch(API+path, {method:'DELETE'});
   return r.json();
 }
 
-// ===== ページ切り替え =====
-const pages = ['home','input','stats','settings'];
-function switchPage(p) {
-  pages.forEach(id => {
-    document.getElementById('page-'+id).classList.toggle('active', id===p);
-    const lbl = document.getElementById('nl-'+id);
-    const ico = document.getElementById('ico-'+id);
-    const active = id===p;
-    lbl.style.color = active ? 'var(--accent)' : 'var(--sub2)';
-    lbl.style.fontWeight = active ? '700' : '400';
-    ico.setAttribute('stroke', active ? 'var(--accent)' : 'var(--sub2)');
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal').forEach(m => { m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); }); });
+
+// ===== ナビ =====
+let curPage = 'home';
+const PAGES = ['home','input','stats','accounting','settings'];
+function go(page) {
+  PAGES.forEach(p => {
+    document.getElementById('page-'+p).classList.toggle('active', p===page);
+    document.getElementById('nav-'+p).classList.toggle('active', p===page);
   });
-  if (p==='input')    loadHistory();
-  if (p==='stats')    loadStatsAuto();
-  if (p==='settings') loadMaster();
+  curPage = page;
+  if (page==='input')      loadHistory();
+  if (page==='stats')      loadStats();
+  if (page==='settings')   loadMaster();
 }
 
-// ===== 日付 =====
-function updateDate() {
+// ===== 状態 =====
+let masterItems = [];
+let statsYear, statsMonth;
+let dailyChartObj = null, compareChartObj = null;
+
+// ===== 初期化 =====
+async function init() {
   const d = new Date();
   const days = ['日','月','火','水','木','金','土'];
-  document.getElementById('headerDate').textContent = `${d.getMonth()+1}月${d.getDate()}日（${days[d.getDay()]}）`;
+  document.getElementById('home-date').textContent = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${days[d.getDay()]}）`;
+  statsYear  = d.getFullYear();
+  statsMonth = d.getMonth()+1;
+  updateStatsLabel();
+  initSelects();
+  try {
+    const data = await GET('/api/initData');
+    applyMaster(data.master || []);
+    applyHomeStats(data.todayStats, data.thisMonth, data.prevMonth);
+    applyTodayHistory(data.history && data.history.records ? data.history.records : []);
+  } catch(e) {
+    toast('データ取得エラー', true);
+  }
+}
+
+function initSelects() {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth()+1;
+  ['acc-year','csv-year'].forEach(id => {
+    const el = document.getElementById(id);
+    el.innerHTML = '';
+    for (let i=y; i>=y-3; i--) el.innerHTML += `<option value="${i}"${i===y?' selected':''}>${i}年</option>`;
+  });
+  ['acc-month','csv-month'].forEach(id => {
+    const el = document.getElementById(id);
+    el.innerHTML = '';
+    for (let i=1; i<=12; i++) el.innerHTML += `<option value="${i}"${i===m?' selected':''}>${i}月</option>`;
+  });
 }
 
 // ===== マスタ =====
-async function loadMaster() {
-  document.getElementById('masterSpinner').style.display = 'block';
-  try {
-    const d = await apiGet('/api/getMaster');
-    masterItems = d.items || [];
-    renderMasterList();
-    updateSelects();
-    renderQuickBtns();
-  } catch(e) { showToast('マスタ取得エラー', true); }
-  finally { document.getElementById('masterSpinner').style.display = 'none'; }
-}
-
-function renderMasterList() {
-  const el = document.getElementById('masterList');
-  if (!masterItems.length) { el.innerHTML = '<div style="padding:12px 0;text-align:center;color:var(--sub2);">マスタが空です</div>'; return; }
-  el.innerHTML = masterItems.map(item => `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);">
-      <div>
-        <span style="font-size:14px;font-weight:600;color:var(--text);">${item.type}</span>
-        <span style="font-size:12px;color:var(--sub);margin-left:8px;">${fmt(item.amount)}</span>
-        ${item.description ? `<span style="font-size:11px;color:var(--sub2);margin-left:4px;">${item.description}</span>` : ''}
-      </div>
-      <div style="display:flex;gap:6px;">
-        <button onclick="openEditMaster(${item.id},'${escQ(item.type)}',${item.amount},'${escQ(item.description||'')}')" style="padding:5px 10px;font-size:12px;background:var(--accent-l);color:var(--accent);border:1px solid var(--accent-m);border-radius:6px;cursor:pointer;font-weight:500;">編集</button>
-        <button onclick="deleteMaster(${item.id},'${escQ(item.type)}')" class="btn-danger" style="padding:5px 10px;font-size:12px;">削除</button>
-      </div>
-    </div>
-  `).join('');
-}
-
-function updateSelects() {
-  const opts = masterItems.map(i => `<option value="${i.type}" data-amount="${i.amount}">${i.type}（${fmt(i.amount)}）</option>`).join('');
-  ['inputType','editType'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.innerHTML = opts || '<option>マスタが空です</option>';
-  });
-  autoFillAmount();
-}
-
-function autoFillAmount() {
-  const sel = document.getElementById('inputType');
-  if (sel && sel.options.length) document.getElementById('inputAmount').value = sel.options[sel.selectedIndex]?.dataset.amount || '';
+function applyMaster(items) {
+  masterItems = items;
+  renderQuickBtns();
+  updateTypeSelects();
+  renderMasterList();
 }
 
 function renderQuickBtns() {
-  const el = document.getElementById('quickBtns');
-  if (!masterItems.length) { el.innerHTML = '<div style="text-align:center;color:var(--sub2);padding:12px;">マスタが空です</div>'; return; }
-  el.innerHTML = masterItems.map((item, i) => {
-    const isPrimary = i === 0;
-    return isPrimary
-      ? `<button class="btn-primary" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-radius:10px;font-size:15px;" onclick="quickAdd('${escQ(item.type)}',${item.amount})">
-          <span style="font-weight:700;">${item.type}</span>
-          <span style="font-size:20px;font-weight:800;">${fmt(item.amount)}</span>
-         </button>`
-      : `<button class="quick-btn" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:15px 18px;" onclick="quickAdd('${escQ(item.type)}',${item.amount})">
-          <span style="font-size:15px;font-weight:700;color:var(--text);">${item.type}</span>
-          <span style="font-size:20px;font-weight:700;color:var(--sub);">${fmt(item.amount)}</span>
-         </button>`;
-  }).join('');
+  const el = document.getElementById('quick-btns');
+  if (!masterItems.length) { el.innerHTML = '<div style="text-align:center;color:var(--sub2);padding:16px;">設定からマスタを追加してください</div>'; return; }
+  el.innerHTML = masterItems.map((item, i) =>
+    `<button class="quick-btn${i===0?' primary':''}" onclick="quickAdd('${esc(item.type)}',${item.amount})">
+      <span class="q-name">${esc(item.type)}</span>
+      <span class="q-amt">${fmt(item.amount)}</span>
+    </button>`
+  ).join('');
 }
 
-// ===== LocalStorageキャッシュ =====
-const LS_KEY = 'amato_cache_v2';
-const LS_TTL = 5 * 60 * 1000;
+function updateTypeSelects() {
+  const opts = masterItems.map(i => `<option value="${esc(i.type)}" data-amount="${i.amount}">${esc(i.type)}（${fmt(i.amount)}）</option>`).join('');
+  const inputType = document.getElementById('input-type');
+  const editType  = document.getElementById('edit-type');
+  if (inputType) inputType.innerHTML = '<option value="">種別を選択</option>' + opts;
+  if (editType)  editType.innerHTML  = opts;
+  if (inputType) inputType.onchange = () => {
+    const opt = inputType.options[inputType.selectedIndex];
+    if (opt && opt.dataset.amount) document.getElementById('input-amount').value = opt.dataset.amount;
+  };
+}
 
-function lsSet(key, val) {
+async function loadMaster() {
   try {
-    const store = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-    store[key] = { val, ts: Date.now() };
-    localStorage.setItem(LS_KEY, JSON.stringify(store));
-  } catch(e) {}
-}
-function lsGet(key, ttlMs=LS_TTL) {
-  try {
-    const store = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-    const c = store[key];
-    return (c && Date.now()-c.ts < ttlMs) ? c.val : null;
-  } catch(e) { return null; }
-}
-function lsClear(...keys) {
-  try {
-    const store = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-    keys.forEach(k => delete store[k]);
-    localStorage.setItem(LS_KEY, JSON.stringify(store));
-  } catch(e) {}
-}
-const memCache = {};
-function memSet(key, val) { memCache[key] = { val, ts: Date.now() }; }
-function memGet(key, ttlMs=60000) { const c=memCache[key]; return (c&&Date.now()-c.ts<ttlMs)?c.val:null; }
-function memClear(...keys) { keys.forEach(k => delete memCache[k]); }
-
-// ===== initData（1発API・全データ取得） =====
-async function loadInitData() {
-  const lsCached = lsGet('initData');
-  if (lsCached) applyInitData(lsCached);
-  try {
-    const d = await apiGet('/api/initData');
-    if (d && d.master && d.todayStats && d.thisMonth && d.prevMonth && d.history) {
-      lsSet('initData', d);
-      memSet('initData', d);
-      applyInitData(d);
-    } else {
-      await loadInitDataFallback(lsCached);
-    }
-  } catch(e) {
-    await loadInitDataFallback(lsCached);
-  }
+    const d = await GET('/api/getMaster');
+    applyMaster(d.items || []);
+  } catch(e) { toast('マスタ取得エラー', true); }
 }
 
-// フォールバック：個別API並列呼び出し
-async function loadInitDataFallback(lsCached) {
-  try {
-    const now = new Date();
-    const curMonth  = now.getMonth()+1;
-    const prevMonth = curMonth===1 ? 12 : curMonth-1;
-    const prevYear  = curMonth===1 ? now.getFullYear()-1 : now.getFullYear();
-    const [master, todayStats, thisMonth, prevMonthData, history] = await Promise.all([
-      apiGet('/api/getMaster'),
-      apiGet('/api/getTodayStats'),
-      apiGet('/api/getMonthStats', {year:now.getFullYear(), month:curMonth}),
-      apiGet('/api/getMonthStats', {year:prevYear, month:prevMonth}),
-      apiGet('/api/getRecentHistory', {days:30})
-    ]);
-    const d = {
-      master:     master.items || [],
-      todayStats,
-      thisMonth,
-      prevMonth:  prevMonthData,
-      history
-    };
-    lsSet('initData', d);
-    memSet('initData', d);
-    applyInitData(d);
-  } catch(e2) {
-    if (!lsCached) showToast('データ取得エラー', true);
-  }
-}
-
-function applyInitData(d) {
-  if (d.master) { masterItems=d.master; renderMasterList(); updateSelects(); renderQuickBtns(); }
-  if (d.todayStats && d.thisMonth && d.prevMonth && d.history) {
-    applyHomeData({ today:d.todayStats, thisM:d.thisMonth, prevM:d.prevMonth, history:d.history });
-  }
-}
-
-function applyHomeData({ today, thisM, prevM, history }) {
-  document.getElementById('kpi_today').textContent = fmt(today.totalSales);
-  document.getElementById('kpi_today_count').textContent = `${today.totalCount}件`;
-  document.getElementById('kpi_shinki').textContent = fmt(today.shinkiSales);
-  document.getElementById('kpi_shinki_count').textContent = `${today.shinkiCount}件`;
-  document.getElementById('kpi_joren').textContent = fmt(today.jorenSales);
-  document.getElementById('kpi_joren_count').textContent = `${today.jorenCount}件`;
-  document.getElementById('todayBadge').textContent = `${today.totalCount}件`;
-  document.getElementById('kpi_month').textContent = fmt(thisM.totalSales);
-  if (prevM.totalSales > 0) {
-    const pct = Math.round((thisM.totalSales - prevM.totalSales) / prevM.totalSales * 100);
-    const el = document.getElementById('kpi_month_diff');
-    el.textContent = `${pct>=0?'▲':'▼'}${Math.abs(pct)}% 先月比`;
-    el.style.color = pct>=0 ? '#6ee7b7' : '#fca5a5';
-  } else { document.getElementById('kpi_month_diff').textContent = ''; }
-  applyTodayHistory(history);
-  applyTrendData(history);
-}
-
-function applyTodayHistory(history) {
-  const now = new Date();
-  const todayKey = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
-  const records = (history.records||[]).filter(r=>r.date===todayKey).slice(0,6);
-  const el = document.getElementById('todayList');
-  if (!records.length) { el.innerHTML='<div style="text-align:center;color:var(--sub2);padding:12px 0;">まだ記録がありません</div>'; return; }
-  el.innerHTML = records.map(r=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
-      <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;flex-shrink:0;
-        ${r.type==='新規'?'background:var(--accent-l);color:var(--accent);border:1px solid var(--accent-m);':'background:var(--card2);color:var(--sub);border:1px solid var(--border);'}">${r.type}</span>
-      <span style="font-size:14px;font-weight:600;flex:1;">${fmt(r.amount)}</span>
-      <span style="font-size:11px;color:var(--sub2);">${r.time}</span>
-      <button onclick="deleteSale(${r.id},'今日')" style="font-size:11px;color:var(--sub2);background:none;border:none;cursor:pointer;padding:2px 6px;">取消</button>
+function renderMasterList() {
+  const el = document.getElementById('master-list');
+  if (!masterItems.length) { el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--sub2);">マスタが空です</div>'; return; }
+  el.innerHTML = masterItems.map(item => `
+    <div class="list-item">
+      <div style="flex:1;">
+        <div style="font-weight:700;">${esc(item.type)}</div>
+        <div style="font-size:12px;color:var(--sub);">${fmt(item.amount)}${item.description?' · '+esc(item.description):''}</div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="openEditMaster(${item.id},'${esc(item.type)}',${item.amount},'${esc(item.description||'')}')">編集</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteMaster(${item.id},'${esc(item.type)}')">削除</button>
     </div>
   `).join('');
 }
 
-function applyTrendData(history) {
-  document.getElementById('trendSpinner').style.display='none';
-  document.getElementById('trendWrap').style.display='block';
-  const dayMap={};
-  (history.records||[]).forEach(r=>{ dayMap[r.date]=(dayMap[r.date]||0)+r.amount; });
-  trendAllLabels=[]; trendAllData=[];
-  for(let i=29;i>=0;i--){
-    const dt=new Date(); dt.setDate(dt.getDate()-i);
-    const key=`${dt.getFullYear()}/${dt.getMonth()+1}/${dt.getDate()}`;
-    trendAllLabels.push(`${dt.getMonth()+1}/${dt.getDate()}`);
-    trendAllData.push(dayMap[key]||0);
-  }
-  renderTrendChart(currentPeriod);
+async function addMaster() {
+  const type   = document.getElementById('new-type').value.trim();
+  const amount = parseInt(document.getElementById('new-amount').value);
+  const desc   = document.getElementById('new-desc').value.trim();
+  if (!type || !amount) { toast('種別名と金額は必須です', true); return; }
+  const r = await POST('/api/addMaster', { type, amount, description:desc });
+  if (r.success) { toast('マスタを追加しました'); ['new-type','new-amount','new-desc'].forEach(id => document.getElementById(id).value=''); await loadMaster(); }
+  else toast(r.message, true);
 }
 
-async function refreshAll() {
-  lsClear('initData');
-  memClear('initData','history');
-  await loadInitData();
+function openEditMaster(id, type, amount, desc) {
+  document.getElementById('edit-master-id').value     = id;
+  document.getElementById('edit-master-type').value   = type;
+  document.getElementById('edit-master-amount').value = amount;
+  document.getElementById('edit-master-desc').value   = desc;
+  openModal('edit-master-modal');
+}
+
+async function confirmEditMaster() {
+  const id     = document.getElementById('edit-master-id').value;
+  const type   = document.getElementById('edit-master-type').value.trim();
+  const amount = parseInt(document.getElementById('edit-master-amount').value);
+  const desc   = document.getElementById('edit-master-desc').value.trim();
+  if (!id||!type||!amount) { toast('全項目を入力してください', true); return; }
+  const r = await PUT('/api/updateMaster/'+id, { type, amount, description:desc });
+  if (r.success) { toast('更新しました'); closeModal('edit-master-modal'); await loadMaster(); }
+  else toast(r.message, true);
+}
+
+async function deleteMaster(id, type) {
+  if (!confirm(`「${type}」を削除しますか？`)) return;
+  const r = await DEL('/api/deleteMaster/'+id);
+  if (r.success) { toast('削除しました'); await loadMaster(); }
+  else toast(r.message, true);
+}
+
+// ===== ホーム =====
+function applyHomeStats(today, thisM, prevM) {
+  if (!today) return;
+  document.getElementById('kpi-today').textContent     = fmt(today.totalSales);
+  document.getElementById('kpi-today-sub').textContent = `${today.totalCount}件（新規${today.shinkiCount} / 常連${today.jorenCount}）`;
+  document.getElementById('kpi-shinki').textContent    = fmt(today.shinkiSales);
+  document.getElementById('kpi-shinki-sub').textContent = `${today.shinkiCount}件`;
+  document.getElementById('kpi-joren').textContent     = fmt(today.jorenSales);
+  document.getElementById('kpi-joren-sub').textContent  = `${today.jorenCount}件`;
+  document.getElementById('kpi-month').textContent     = fmt(thisM.totalSales);
+  document.getElementById('kpi-month-sub').textContent  = `${thisM.totalCount}件`;
+  if (prevM && prevM.totalSales > 0) {
+    const pct = Math.round((thisM.totalSales - prevM.totalSales) / prevM.totalSales * 100);
+    const tag = document.getElementById('kpi-month-diff');
+    tag.textContent = `${pct>=0?'▲':'▼'}${Math.abs(pct)}% 先月比`;
+    tag.className   = 'tag ' + (pct>=0 ? 'tag-up' : 'tag-down');
+    document.getElementById('month-progress').style.width = Math.min(Math.round(thisM.totalSales/prevM.totalSales*100),150)+'%';
+  }
+}
+
+function applyTodayHistory(records) {
+  const now = new Date();
+  const todayKey = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
+  const recs = records.filter(r => r.date===todayKey);
+  const el = document.getElementById('today-list');
+  if (!recs.length) { el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--sub2);">まだ記録がありません</div>'; return; }
+  el.innerHTML = recs.map(r => `
+    <div class="list-item">
+      <span class="badge ${r.type==='新規'?'badge-shinki':r.type==='常連'?'badge-joren':'badge-other'}">${esc(r.type)}</span>
+      <span style="font-weight:700;flex:1;">${fmt(r.amount)}</span>
+      <span style="font-size:11px;color:var(--sub2);">${r.time}</span>
+      <button style="background:none;border:none;color:var(--sub2);font-size:16px;padding:0 4px;" onclick="deleteSale(${r.id},'今日')">✕</button>
+    </div>
+  `).join('');
+}
+
+async function refreshHome() {
+  try {
+    const now = new Date();
+    const y=now.getFullYear(), m=now.getMonth()+1;
+    const pm=m===1?12:m-1, py=m===1?y-1:y;
+    const [today, thisM, prevM, hist] = await Promise.all([
+      GET('/api/getTodayStats'),
+      GET('/api/getMonthStats',{year:y,month:m}),
+      GET('/api/getMonthStats',{year:py,month:pm}),
+      GET('/api/getRecentHistory',{days:1})
+    ]);
+    applyHomeStats(today, thisM, prevM);
+    applyTodayHistory(hist.records||[]);
+  } catch(e) {}
 }
 
 async function quickAdd(type, amount) {
-  try {
-    const r = await api('POST','/api/addSale',{type,amount:Number(amount)});
-    if (r.success) { showToast(`✅ ${type} ${fmt(amount)}`); refreshAll(); }
-    else showToast(r.message, true);
-  } catch(e) { showToast('登録エラー', true); }
+  const r = await POST('/api/addSale', {type, amount});
+  if (r.success) { toast(`${type} ${fmt(amount)}`); refreshHome(); if(curPage==='input') loadHistory(); }
+  else toast(r.message, true);
 }
 
-function renderTrendChart(period) {
-  const labels = trendAllLabels.slice(-period);
-  const data   = trendAllData.slice(-period);
-  const ctx = document.getElementById('trendChart').getContext('2d');
-  if (trendChartObj) trendChartObj.destroy();
-  const grad = ctx.createLinearGradient(0,0,0,148);
-  grad.addColorStop(0,'rgba(30,44,58,0.12)');
-  grad.addColorStop(1,'rgba(30,44,58,0.01)');
-  trendChartObj = new Chart(ctx, {
-    type:'line',
-    data:{ labels, datasets:[{ data, borderColor:'#1e2c3a', backgroundColor:grad, fill:true, tension:0,
-      pointRadius: period<=10?4:3, pointBackgroundColor:'#1e2c3a', pointBorderColor:'#fff', pointBorderWidth:2, borderWidth:2.5 }] },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#1f2937', padding:8, callbacks:{label:c=>'¥'+Number(c.raw).toLocaleString()} } },
-      scales:{
-        x:{ grid:{color:'rgba(0,0,0,0.04)'}, ticks:{font:{size:10},color:'#9ca3af', maxTicksLimit:period<=7?7:period<=15?8:10} },
-        y:{ beginAtZero:true, grid:{color:'rgba(0,0,0,0.05)'}, ticks:{font:{size:10},color:'#9ca3af', callback:v=>v===0?'0':(v/10000).toFixed(1)+'万'} }
-      }
-    }
-  });
+// ===== 売上入力 =====
+async function addSale() {
+  const type   = document.getElementById('input-type').value;
+  const amount = parseInt(document.getElementById('input-amount').value);
+  if (!type)  { toast('種別を選択してください', true); return; }
+  if (!amount||amount<=0) { toast('正しい金額を入力してください', true); return; }
+  const btn = document.getElementById('add-sale-btn');
+  btn.disabled = true;
+  const r = await POST('/api/addSale', {type, amount});
+  if (r.success) { toast(`${type} ${fmt(amount)}`); document.getElementById('input-amount').value=''; refreshHome(); loadHistory(); }
+  else toast(r.message, true);
+  btn.disabled = false;
 }
 
-function setPeriod(p) {
-  currentPeriod = p;
-  [7,15,30].forEach(n => {
-    const b = document.getElementById('pbtn'+n);
-    b.style.background = n===p ? 'var(--accent)' : 'var(--card2)';
-    b.style.color = n===p ? '#fff' : 'var(--sub)';
-  });
-  if (trendAllData.length) renderTrendChart(p);
-}
-
-// ===== クイック入力 =====
-// ===== 売上登録 =====
-document.getElementById('addSaleBtn').addEventListener('click', async function() {
-  const type = document.getElementById('inputType').value;
-  const amount = Number(document.getElementById('inputAmount').value);
-  if (!type || !amount) { showToast('種別と金額を入力してください', true); return; }
-  this.disabled = true;
-  document.getElementById('addSaleSpinner').style.display = 'block';
-  try {
-    const r = await api('POST','/api/addSale',{type,amount});
-    if (r.success) {
-      showToast(`✅ ${type} ${fmt(amount)}`);
-      refreshAll(); loadHistory();
-    } else showToast(r.message, true);
-  } catch(e) { showToast('登録エラー', true); }
-  finally { this.disabled=false; document.getElementById('addSaleSpinner').style.display='none'; }
-});
-
+// ===== 履歴 =====
 async function loadHistory() {
-  document.getElementById('histSpinner').style.display = 'block';
-
-  // initDataキャッシュから即表示
-  const initCached = memGet('initData') || lsGet('initData');
-  if (initCached && initCached.history) {
-    renderHistory(initCached.history);
-    document.getElementById('histSpinner').style.display = 'none';
-    return;
-  }
-
-  // キャッシュ即表示（30秒TTL）
-  const cached = lsGet('history', 30000);
-  if (cached) renderHistory(cached);
-
+  document.getElementById('history-list').innerHTML = '<span class="spinner"></span>';
   try {
-    const d = await apiGet('/api/getRecentHistory', {days:30});
-    lsSet('history', d);
-    renderHistory(d);
-  } catch(e) {
-    if (!cached) document.getElementById('historyList').innerHTML = '<div style="text-align:center;color:var(--red);padding:16px;">読込エラー</div>';
-  }
-  finally { document.getElementById('histSpinner').style.display='none'; }
+    const d = await GET('/api/getRecentHistory',{days:30});
+    renderHistory(d.records||[]);
+  } catch(e) { document.getElementById('history-list').innerHTML = '<div style="padding:16px;text-align:center;color:var(--red);">読み込みエラー</div>'; }
 }
 
-function renderHistory(d) {
-  const records = d.records || [];
-  const el = document.getElementById('historyList');
-  if (!records.length) { el.innerHTML = '<div style="text-align:center;color:var(--sub2);padding:16px;">履歴がありません</div>'; return; }
+function renderHistory(records) {
+  const el = document.getElementById('history-list');
+  if (!records.length) { el.innerHTML='<div style="padding:16px;text-align:center;color:var(--sub2);">履歴がありません</div>'; return; }
   const groups = {};
-  records.forEach(r => { if (!groups[r.date]) groups[r.date]=[]; groups[r.date].push(r); });
-  el.innerHTML = Object.entries(groups).map(([date, items]) => `
-    <div style="margin-bottom:4px;">
-      <div style="font-size:11px;color:var(--sub2);font-weight:600;padding:8px 0 4px;">${date}</div>
-      ${items.map(r => `
-        <div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);">
-          <span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:4px;flex-shrink:0;
-            ${r.type==='新規'?'background:var(--accent-l);color:var(--accent);border:1px solid var(--accent-m);':'background:var(--card2);color:var(--sub);border:1px solid var(--border);'}">${r.type}</span>
-          <span style="font-size:14px;font-weight:600;flex:1;">${fmt(r.amount)}</span>
+  records.forEach(r => { (groups[r.date]=groups[r.date]||[]).push(r); });
+  el.innerHTML = Object.entries(groups).map(([date,items]) => `
+    <div>
+      <div style="font-size:11px;font-weight:700;color:var(--sub2);padding:10px 0 4px;">${date}</div>
+      ${items.map(r=>`
+        <div class="list-item">
+          <span class="badge ${r.type==='新規'?'badge-shinki':r.type==='常連'?'badge-joren':'badge-other'}">${esc(r.type)}</span>
+          <span style="font-weight:700;flex:1;">${fmt(r.amount)}</span>
           <span style="font-size:11px;color:var(--sub2);">${r.time}</span>
-          <button onclick="openEditSale(${r.id},'${escQ(r.type)}',${r.amount})" style="font-size:13px;background:none;border:none;cursor:pointer;color:var(--sub2);padding:3px;">✏️</button>
-          <button onclick="deleteSale(${r.id},'${date}')" style="font-size:13px;background:none;border:none;cursor:pointer;color:var(--sub2);padding:3px;">🗑</button>
+          <button style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--sub);" onclick="openEditSale(${r.id},'${esc(r.type)}',${r.amount})">編集</button>
+          <button style="background:none;border:none;color:var(--sub2);font-size:16px;padding:0 4px;" onclick="deleteSale(${r.id},'${date}')">✕</button>
         </div>
       `).join('')}
     </div>
   `).join('');
 }
-function openEditSale(rowIndex, type, amount) {
-  document.getElementById('editId').value = rowIndex;
-  document.getElementById('editType').value = type;
-  document.getElementById('editAmount').value = amount;
-  document.getElementById('editModal').classList.add('open');
-}
-document.getElementById('closeEditModal').onclick = () => document.getElementById('editModal').classList.remove('open');
-document.getElementById('editModal').addEventListener('click', e => { if(e.target===document.getElementById('editModal')) document.getElementById('editModal').classList.remove('open'); });
-document.getElementById('confirmEditBtn').addEventListener('click', async function() {
-  const rowIndex = Number(document.getElementById('editId').value);
-  const type = document.getElementById('editType').value;
-  const amount = Number(document.getElementById('editAmount').value);
-  if (!rowIndex||!type||!amount) { showToast('全項目を入力してください',true); return; }
-  this.disabled=true;
-  try {
-    const r = await api('PUT','/api/editSale/'+rowIndex,{type,amount});
-    if (r.success) {
-      showToast('✅ 修正しました');
-      document.getElementById('editModal').classList.remove('open');
-      refreshAll(); loadHistory();
-    }
-    else showToast(r.message,true);
-  } catch(e) { showToast('修正エラー',true); }
-  finally { this.disabled=false; }
-});
 
-// ===== 削除 =====
-async function deleteSale(rowIndex, dateStr) {
+function openEditSale(id, type, amount) {
+  document.getElementById('edit-id').value     = id;
+  document.getElementById('edit-type').value   = type;
+  document.getElementById('edit-amount').value = amount;
+  openModal('edit-modal');
+}
+
+async function confirmEdit() {
+  const id     = document.getElementById('edit-id').value;
+  const type   = document.getElementById('edit-type').value;
+  const amount = parseInt(document.getElementById('edit-amount').value);
+  if (!id||!type||!amount) { toast('全項目を入力してください',true); return; }
+  const r = await PUT('/api/editSale/'+id,{type,amount});
+  if (r.success) { toast('修正しました'); closeModal('edit-modal'); refreshHome(); loadHistory(); }
+  else toast(r.message,true);
+}
+
+async function deleteSale(id, dateStr) {
   if (!confirm(`${dateStr}の売上を削除しますか？`)) return;
+  const r = await DEL('/api/deleteSale/'+id);
+  if (r.success) { toast('削除しました'); refreshHome(); if(curPage==='input') loadHistory(); }
+  else toast(r.message,true);
+}
+
+// ===== 集計 =====
+function updateStatsLabel() { document.getElementById('stats-month-label').textContent = `${statsYear}年${statsMonth}月`; }
+
+function changeStatsMonth(d) {
+  statsMonth += d;
+  if (statsMonth>12) { statsMonth=1; statsYear++; }
+  if (statsMonth<1)  { statsMonth=12; statsYear--; }
+  updateStatsLabel();
+  loadStats();
+}
+
+async function loadStats() {
+  const y=statsYear, m=statsMonth;
+  const pm=m===1?12:m-1, py=m===1?y-1:y;
   try {
-    const r = await api('DELETE','/api/deleteSale/'+rowIndex);
-    if (r.success) {
-      showToast('削除しました');
-      refreshAll(); loadHistory();
-    }
-    else showToast(r.message,true);
-  } catch(e) { showToast('削除エラー',true); }
-}
-
-// ===== 集計（レポート自動生成） =====
-async function loadStatsAuto() {
-  const now = new Date();
-  const year = now.getFullYear(), month = now.getMonth()+1;
-  document.getElementById('statsMonthLabel').textContent = `${year}年${month}月 — 今月`;
-  document.getElementById('statsTopSpinner').style.display = 'block';
-  document.getElementById('statsLineSpinner').style.display = 'flex';
-  document.getElementById('statsLineWrap').style.display = 'none';
-
-  try {
-    // キャッシュからinitDataを取得（あれば即表示）
-    const cached = memGet('initData') || lsGet('initData');
-    let cur, prev;
-    if (cached && cached.thisMonth && cached.prevMonth) {
-      cur = cached.thisMonth;
-      prev = cached.prevMonth;
-    } else {
-      [cur, prev] = await Promise.all([
-        apiGet('/api/getMonthStats', {year, month}),
-        apiGet('/api/getMonthStats', {year, month:month===1?12:month-1})
-      ]);
-    }
-
-    // ① まとめカード
-    document.getElementById('statsTotalSales').textContent = fmt(cur.totalSales);
-    document.getElementById('statsTotalCount').textContent = `${cur.totalCount}件`;
-    const unitPrice = cur.totalCount > 0 ? Math.round(cur.totalSales / cur.totalCount) : 0;
-    document.getElementById('statsUnitPrice').textContent = fmt(unitPrice);
-
-    const diffPct = prev.totalSales > 0 ? Math.round((cur.totalSales - prev.totalSales) / prev.totalSales * 100) : 0;
-    const diffEl = document.getElementById('statsDiff');
-    diffEl.textContent = `${diffPct>=0?'▲':'▼'}${Math.abs(diffPct)}%`;
-    diffEl.style.color = diffPct>=0 ? '#6ee7b7' : '#fca5a5';
-
-    // 一言サマリー自動生成
-    document.getElementById('statsSummaryText').textContent = generateSummary(cur, prev, unitPrice);
-
-    // ③ 気づきカード自動生成
-    renderInsightGrid(cur, prev, unitPrice);
-
-    // ② 推移グラフ（日別）
-    await loadStatsLineChart(year, month, cur);
-
-    // 詳細パネルの比較グラフ（開いていれば）
-    if (detailOpen) await loadCompareChart(year, month);
-
-    renderStatsTable(cur);
-
-  } catch(e) { document.getElementById('statsSummaryText').textContent = 'データ取得エラー'; }
-  finally { document.getElementById('statsTopSpinner').style.display='none'; }
-}
-
-// ===== 一言サマリー自動生成ロジック =====
-function generateSummary(cur, prev, unitPrice) {
-  const lines = [];
-  const diffPct = prev.totalSales > 0 ? (cur.totalSales - prev.totalSales) / prev.totalSales * 100 : 0;
-  if (diffPct >= 10) lines.push('今月は先月より好調です。');
-  else if (diffPct >= 0) lines.push('今月は先月並みの推移です。');
-  else if (diffPct >= -10) lines.push('今月はやや苦戦しています。');
-  else lines.push('今月は先月を下回っています。');
-
-  const shinkiRatio = cur.totalCount > 0 ? cur.shinkiCount / cur.totalCount : 0;
-  if (shinkiRatio >= 0.6) lines.push('新規比率が高い月です。');
-  else if (shinkiRatio <= 0.3) lines.push('常連中心の安定した月です。');
-
-  const prevUnitPrice = prev.totalCount > 0 ? Math.round(prev.totalSales / prev.totalCount) : 0;
-  if (prevUnitPrice > 0 && Math.abs(unitPrice - prevUnitPrice) / prevUnitPrice < 0.05) lines.push('客単価は安定しています。');
-
-  return lines.join(' ') || 'データを分析中です。';
-}
-
-// ===== 気づきカード自動生成 =====
-function renderInsightGrid(cur, prev, unitPrice) {
-  const shinkiRatio = cur.totalCount > 0 ? Math.round(cur.shinkiCount / cur.totalCount * 100) : 0;
-  const jorenRatio  = 100 - shinkiRatio;
-  const prevUnit    = prev.totalCount > 0 ? Math.round(prev.totalSales / prev.totalCount) : 0;
-  const unitDiff    = prevUnit > 0 ? Math.round((unitPrice - prevUnit) / prevUnit * 100) : 0;
-  const diffPct     = prev.totalSales > 0 ? Math.round((cur.totalSales - prev.totalSales) / prev.totalSales * 100) : 0;
-
-  const shinkiLabel = shinkiRatio >= 60 ? '新規が強い' : shinkiRatio >= 40 ? '新規・常連バランス良好' : '常連中心の月';
-  const jorenLabel  = jorenRatio >= 60 ? '常連が多い' : jorenRatio <= 30 ? '常連は少なめ' : '常連が安定';
-  const unitLabel   = Math.abs(unitDiff) <= 5 ? '客単価は安定' : unitDiff > 5 ? '客単価が上昇' : '客単価がやや低下';
-  const salesLabel  = diffPct >= 10 ? '売上が伸びている' : diffPct >= 0 ? '先月並みを維持' : '売上がやや低下';
-
-  document.getElementById('insightGrid').innerHTML = `
-    <div class="card" style="padding:14px;">
-      <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:6px;display:flex;align-items:center;gap:5px;">
-        <span style="width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block;"></span>${shinkiLabel}
-      </div>
-      <div style="font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.5px;">${fmt(cur.shinkiSales)}</div>
-      <div style="font-size:11px;color:var(--sub2);margin-top:3px;">${cur.shinkiCount}件 · ${shinkiRatio}%</div>
-      <div style="margin-top:8px;height:4px;background:var(--border);border-radius:4px;">
-        <div style="width:${shinkiRatio}%;height:100%;background:var(--accent);border-radius:4px;"></div>
-      </div>
-    </div>
-    <div class="card" style="padding:14px;">
-      <div style="font-size:11px;font-weight:600;color:var(--sub);margin-bottom:6px;display:flex;align-items:center;gap:5px;">
-        <span style="width:6px;height:6px;border-radius:50%;background:var(--sub2);display:inline-block;"></span>${jorenLabel}
-      </div>
-      <div style="font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.5px;">${fmt(cur.jorenSales)}</div>
-      <div style="font-size:11px;color:var(--sub2);margin-top:3px;">${cur.jorenCount}件 · ${jorenRatio}%</div>
-      <div style="margin-top:8px;height:4px;background:var(--border);border-radius:4px;">
-        <div style="width:${jorenRatio}%;height:100%;background:var(--sub2);border-radius:4px;"></div>
-      </div>
-    </div>
-    <div class="card" style="padding:14px;">
-      <div style="font-size:11px;font-weight:600;color:var(--sub);margin-bottom:6px;display:flex;align-items:center;gap:5px;">
-        <span style="font-size:13px;">💰</span>${unitLabel}
-      </div>
-      <div style="font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.5px;">${fmt(unitPrice)}</div>
-      <div style="font-size:11px;margin-top:3px;color:${unitDiff>=0?'#16a34a':'var(--red)'};">
-        ${prevUnit > 0 ? `先月 ${fmt(prevUnit)} · ${unitDiff>=0?'+':''}${unitDiff}%` : '先月データなし'}
-      </div>
-    </div>
-    <div class="card" style="padding:14px;">
-      <div style="font-size:11px;font-weight:600;color:var(--sub);margin-bottom:6px;display:flex;align-items:center;gap:5px;">
-        <span style="font-size:13px;">${diffPct>=0?'📈':'📉'}</span>${salesLabel}
-      </div>
-      <div style="font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.5px;">${fmt(cur.totalSales)}</div>
-      <div style="font-size:11px;margin-top:3px;color:${diffPct>=0?'#16a34a':'var(--red)'};">
-        ${prev.totalSales > 0 ? `先月比 ${diffPct>=0?'▲':'▼'}${Math.abs(diffPct)}%` : '先月データなし'}
-      </div>
-    </div>
-  `;
-}
-
-// ===== 集計ラインチャート =====
-async function loadStatsLineChart(year, month, cur) {
-  try {
-    // キャッシュのhistoryを優先使用
-    const cached = memGet('initData') || lsGet('initData');
-    let records = [];
-    if (cached && cached.history && cached.history.records) {
-      records = cached.history.records.filter(r => {
-        const p = r.date.split('/');
-        return parseInt(p[0])===year && parseInt(p[1])===month;
-      });
-    } else {
-      const d = await apiGet('/api/getRecentHistory', {days:45});
-      records = (d.records||[]).filter(r => {
-        const p = r.date.split('/');
-        return parseInt(p[0])===year && parseInt(p[1])===month;
-      });
-    }
-    // 日別集計
-    const dayMap = {};
-    records.forEach(r => {
-      const day = parseInt(r.date.split('/')[2]);
-      dayMap[day] = (dayMap[day]||0) + r.amount;
-    });
-    const daysInMonth = new Date(year, month, 0).getDate();
-    const labels=[], data=[];
-    for (let i=1; i<=daysInMonth; i++) { labels.push(`${i}日`); data.push(dayMap[i]||0); }
-
-    // 傾向テキスト自動生成
-    const firstHalf  = data.slice(0, Math.floor(daysInMonth/2)).reduce((a,b)=>a+b,0);
-    const secondHalf = data.slice(Math.floor(daysInMonth/2)).reduce((a,b)=>a+b,0);
-    let trendText = '';
-    if (secondHalf > firstHalf * 1.15) trendText = '月後半に売上が伸びています。後半の勢いを来月も維持できると安定します。';
-    else if (firstHalf > secondHalf * 1.15) trendText = '月前半に売上が集中しています。後半も継続できると更に伸びます。';
-    else trendText = '月を通して安定した売上の流れです。';
-    document.getElementById('statsTrendText').textContent = trendText;
-
-    const ctx = document.getElementById('statsLineChart').getContext('2d');
-    if (statsLineObj) statsLineObj.destroy();
-    const grad = ctx.createLinearGradient(0,0,0,140);
-    grad.addColorStop(0,'rgba(30,44,58,0.12)');
-    grad.addColorStop(1,'rgba(30,44,58,0.01)');
-    statsLineObj = new Chart(ctx, {
-      type:'line',
-      data:{ labels, datasets:[{ data, borderColor:'#1e2c3a', backgroundColor:grad, fill:true, tension:0,
-        pointRadius:2, pointBackgroundColor:'#1e2c3a', pointBorderColor:'#fff', pointBorderWidth:1.5, borderWidth:2.5 }] },
-      options:{
-        responsive:true, maintainAspectRatio:false,
-        plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#1f2937', padding:8, callbacks:{label:c=>'¥'+Number(c.raw).toLocaleString()} } },
-        scales:{
-          x:{ grid:{display:false}, ticks:{font:{size:9},color:'#9ca3af', maxTicksLimit:10} },
-          y:{ beginAtZero:true, grid:{color:'rgba(0,0,0,0.04)'}, ticks:{font:{size:9},color:'#9ca3af', callback:v=>v===0?'0':(v/10000).toFixed(1)+'万'} }
-        }
-      }
-    });
-    document.getElementById('statsLineSpinner').style.display='none';
-    document.getElementById('statsLineWrap').style.display='block';
-  } catch(e) {}
-}
-
-// ===== 詳細パネル =====
-function toggleDetail() {
-  detailOpen = !detailOpen;
-  document.getElementById('detailPanel').style.display = detailOpen ? 'block' : 'none';
-  document.getElementById('detailArrow').textContent = detailOpen ? '▲' : '▼';
-  if (detailOpen) {
-    const now = new Date();
-    loadCompareChart(now.getFullYear(), now.getMonth()+1);
-  }
-}
-
-async function loadCompareChart(year, month) {
-  document.getElementById('compareSpinner').style.display='flex';
-  document.getElementById('compareWrap').style.display='none';
-  try {
-    const months = [];
-    for (let i=2; i>=0; i--) {
-      const m = month-i <= 0 ? month-i+12 : month-i;
-      const y = month-i <= 0 ? year-1 : year;
-      months.push({y,m});
-    }
-    const results = await Promise.all(months.map(({y,m}) => apiGet('/api/getMonthStats', {year:y,month:m})));
-    const labels = months.map(({m}) => `${m}月`);
-    const data   = results.map(r => r.totalSales);
-    const colors = ['#e5e7eb','#d1d5db','#1e2c3a'];
-    if (compareChartObj) { compareChartObj.destroy(); compareChartObj=null; }
-    compareChartObj = new Chart(document.getElementById('compareChart').getContext('2d'), {
-      type:'bar',
-      data:{ labels, datasets:[{ data, backgroundColor:colors, borderRadius:6 }] },
-      options:{
-        responsive:true, maintainAspectRatio:false,
-        plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#1f2937', callbacks:{label:c=>'¥'+Number(c.raw).toLocaleString()} } },
-        scales:{
-          x:{ grid:{display:false}, ticks:{font:{size:11},color:'#9ca3af'} },
-          y:{ beginAtZero:true, grid:{color:'rgba(0,0,0,0.04)'}, ticks:{font:{size:9},color:'#9ca3af', callback:v=>(v/10000).toFixed(0)+'万'} }
-        }
-      }
-    });
-    document.getElementById('compareSpinner').style.display='none';
-    document.getElementById('compareWrap').style.display='block';
-  } catch(e) {}
-}
-
-document.getElementById('loadStatsBtn').addEventListener('click', async function() {
-  const year = Number(document.getElementById('statsYear').value);
-  const month = Number(document.getElementById('statsMonth').value);
-  document.getElementById('statsMonthLabel').textContent = `${year}年${month}月`;
-  document.getElementById('statsTopSpinner').style.display='block';
-  document.getElementById('statsLineSpinner').style.display='flex';
-  document.getElementById('statsLineWrap').style.display='none';
-  try {
-    const [cur, prev] = await Promise.all([
-      apiGet('/api/getMonthStats', {year, month}),
-      apiGet('/api/getMonthStats', {year, month:month===1?12:month-1})
+    const [cur,prev,daily] = await Promise.all([
+      GET('/api/getMonthStats',{year:y,month:m}),
+      GET('/api/getMonthStats',{year:py,month:pm}),
+      GET('/api/getDailyBreakdown',{year:y,month:m})
     ]);
-    document.getElementById('statsTotalSales').textContent = fmt(cur.totalSales);
-    document.getElementById('statsTotalCount').textContent = `${cur.totalCount}件`;
-    const unitPrice = cur.totalCount>0 ? Math.round(cur.totalSales/cur.totalCount) : 0;
-    document.getElementById('statsUnitPrice').textContent = fmt(unitPrice);
-    const diffPct = prev.totalSales>0 ? Math.round((cur.totalSales-prev.totalSales)/prev.totalSales*100) : 0;
-    const diffEl = document.getElementById('statsDiff');
-    diffEl.textContent = `${diffPct>=0?'▲':'▼'}${Math.abs(diffPct)}%`;
-    diffEl.style.color = diffPct>=0 ? '#6ee7b7' : '#fca5a5';
-    document.getElementById('statsSummaryText').textContent = generateSummary(cur,prev,unitPrice);
-    renderInsightGrid(cur,prev,unitPrice);
-    await loadStatsLineChart(year,month,cur);
-    if (detailOpen) await loadCompareChart(year,month);
-    renderStatsTable(cur);
-  } catch(e) { showToast('集計取得エラー',true); }
-  finally { document.getElementById('statsTopSpinner').style.display='none'; }
-});
+    applyStats(cur,prev);
+    renderDailyChart(daily);
+    loadCompareChart(y,m);
+  } catch(e) { toast('集計取得エラー',true); }
+}
 
-function renderStatsTable(d) {
-  document.getElementById('statsTable').innerHTML = `
-    <table style="width:100%;border-collapse:collapse;font-size:13px;">
-      <thead><tr style="background:var(--card2);">
-        <th style="text-align:left;padding:8px 10px;color:var(--sub);font-weight:500;font-size:11px;">項目</th>
-        <th style="text-align:right;padding:8px 10px;color:var(--sub);font-weight:500;font-size:11px;">件数</th>
-        <th style="text-align:right;padding:8px 10px;color:var(--sub);font-weight:500;font-size:11px;">売上</th>
-      </tr></thead>
+function applyStats(cur,prev) {
+  document.getElementById('stats-total').textContent        = fmt(cur.totalSales);
+  document.getElementById('stats-count').textContent        = cur.totalCount;
+  document.getElementById('stats-unit').textContent         = fmt(cur.totalCount>0?Math.round(cur.totalSales/cur.totalCount):0);
+  document.getElementById('stats-shinki-sales').textContent = fmt(cur.shinkiSales);
+  document.getElementById('stats-shinki-count').textContent = cur.shinkiCount+'件';
+  document.getElementById('stats-joren-sales').textContent  = fmt(cur.jorenSales);
+  document.getElementById('stats-joren-count').textContent  = cur.jorenCount+'件';
+  if (prev.totalSales>0) {
+    const pct = Math.round((cur.totalSales-prev.totalSales)/prev.totalSales*100);
+    const el  = document.getElementById('stats-diff');
+    el.textContent = `${pct>=0?'▲':'▼'}${Math.abs(pct)}%`;
+    el.style.color = pct>=0?'var(--green)':'var(--red)';
+  }
+  document.getElementById('stats-table').innerHTML = `
+    <table class="data-table">
+      <thead><tr><th>種別</th><th>件数</th><th>売上</th></tr></thead>
       <tbody>
-        <tr style="border-top:1px solid var(--border);">
-          <td style="padding:9px 10px;color:var(--text);">新規</td>
-          <td style="padding:9px 10px;text-align:right;color:var(--sub);">${d.shinkiCount}件</td>
-          <td style="padding:9px 10px;text-align:right;font-weight:600;color:var(--text);">${fmt(d.shinkiSales)}</td>
-        </tr>
-        <tr style="border-top:1px solid var(--border);">
-          <td style="padding:9px 10px;color:var(--text);">常連</td>
-          <td style="padding:9px 10px;text-align:right;color:var(--sub);">${d.jorenCount}件</td>
-          <td style="padding:9px 10px;text-align:right;font-weight:600;color:var(--text);">${fmt(d.jorenSales)}</td>
-        </tr>
-        <tr style="border-top:1px solid var(--border);background:var(--accent-l);">
-          <td style="padding:9px 10px;font-weight:700;color:var(--accent);">合計</td>
-          <td style="padding:9px 10px;text-align:right;font-weight:600;color:var(--accent);">${d.totalCount}件</td>
-          <td style="padding:9px 10px;text-align:right;font-weight:800;color:var(--accent);">${fmt(d.totalSales)}</td>
-        </tr>
+        <tr><td>新規</td><td>${cur.shinkiCount}件</td><td style="font-weight:700;">${fmt(cur.shinkiSales)}</td></tr>
+        <tr><td>常連</td><td>${cur.jorenCount}件</td><td style="font-weight:700;">${fmt(cur.jorenSales)}</td></tr>
+        ${cur.otherCount>0?`<tr><td>その他</td><td>${cur.otherCount}件</td><td style="font-weight:700;">${fmt(cur.otherSales)}</td></tr>`:''}
+        <tr style="background:var(--accent-l);"><td style="font-weight:800;color:var(--accent);">合計</td><td style="font-weight:800;color:var(--accent);">${cur.totalCount}件</td><td style="font-weight:800;color:var(--accent);">${fmt(cur.totalSales)}</td></tr>
       </tbody>
     </table>`;
 }
 
-// ===== マスタ操作 =====
-document.getElementById('addMasterBtn').addEventListener('click', async function() {
-  const type = document.getElementById('newMasterType').value.trim();
-  const amount = Number(document.getElementById('newMasterAmount').value);
-  const desc = document.getElementById('newMasterDesc').value.trim();
-  if (!type||!amount) { showToast('種別名と金額は必須です',true); return; }
-  this.disabled=true;
-  try {
-    const r = await api('POST','/api/addMaster',{type,amount,description:desc});
-    if (r.success) {
-      showToast('✅ マスタを追加しました');
-      ['newMasterType','newMasterAmount','newMasterDesc'].forEach(id => document.getElementById(id).value='');
-      await loadMaster();
-    } else showToast(r.message,true);
-  } catch(e) { showToast('マスタ追加エラー',true); }
-  finally { this.disabled=false; }
-});
-
-function openEditMaster(rowIndex, type, amount, desc) {
-  document.getElementById('editMasterId').value = rowIndex;
-  document.getElementById('editMasterType').value = type;
-  document.getElementById('editMasterAmount').value = amount;
-  document.getElementById('editMasterDesc').value = desc;
-  document.getElementById('editMasterModal').classList.add('open');
+function renderDailyChart(data) {
+  if (!data.days) return;
+  const labels = data.days.map(d=>`${d.day}日`);
+  const vals   = data.days.map(d=>d.total);
+  const ctx = document.getElementById('daily-chart').getContext('2d');
+  if (dailyChartObj) dailyChartObj.destroy();
+  const grad = ctx.createLinearGradient(0,0,0,160);
+  grad.addColorStop(0,'rgba(30,44,58,0.15)'); grad.addColorStop(1,'rgba(30,44,58,0.01)');
+  dailyChartObj = new Chart(ctx,{type:'line',data:{labels,datasets:[{data:vals,borderColor:'#1e2c3a',backgroundColor:grad,fill:true,tension:0,pointRadius:2,pointBackgroundColor:'#1e2c3a',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a1f2e',callbacks:{label:c=>'¥'+Number(c.raw).toLocaleString()}}},scales:{x:{grid:{display:false},ticks:{font:{size:9},color:'#9ca3af',maxTicksLimit:10}},y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:9},color:'#9ca3af',callback:v=>v===0?'0':v>=10000?(v/10000).toFixed(0)+'万':v}}}}});
 }
-document.getElementById('closeEditMasterModal').onclick = () => document.getElementById('editMasterModal').classList.remove('open');
-document.getElementById('editMasterModal').addEventListener('click', e => { if(e.target===document.getElementById('editMasterModal')) document.getElementById('editMasterModal').classList.remove('open'); });
-document.getElementById('confirmEditMasterBtn').addEventListener('click', async function() {
-  const rowIndex = Number(document.getElementById('editMasterId').value);
-  const type = document.getElementById('editMasterType').value.trim();
-  const amount = Number(document.getElementById('editMasterAmount').value);
-  const desc = document.getElementById('editMasterDesc').value.trim();
-  if (!rowIndex||!type||!amount) { showToast('全項目を入力してください',true); return; }
-  this.disabled=true;
-  try {
-    const r = await api('PUT','/api/updateMaster/'+rowIndex,{type,amount,description:desc});
-    if (r.success) { showToast('✅ マスタを更新しました'); document.getElementById('editMasterModal').classList.remove('open'); await loadMaster(); }
-    else showToast(r.message,true);
-  } catch(e) { showToast('マスタ更新エラー',true); }
-  finally { this.disabled=false; }
-});
 
-async function deleteMaster(rowIndex, type) {
-  if (!confirm(`「${type}」を削除しますか？`)) return;
-  try {
-    const r = await api('DELETE','/api/deleteMaster/'+rowIndex);
-    if (r.success) { showToast('削除しました'); await loadMaster(); }
-    else showToast(r.message,true);
-  } catch(e) { showToast('マスタ削除エラー',true); }
+async function loadCompareChart(y,m) {
+  const months=[];
+  for(let i=2;i>=0;i--){let mm=m-i,yy=y;if(mm<=0){mm+=12;yy--;}months.push({y:yy,m:mm});}
+  const results = await Promise.all(months.map(({y,m})=>GET('/api/getMonthStats',{year:y,month:m})));
+  const ctx = document.getElementById('compare-chart').getContext('2d');
+  if (compareChartObj) compareChartObj.destroy();
+  compareChartObj = new Chart(ctx,{type:'bar',data:{labels:months.map(({m})=>`${m}月`),datasets:[{data:results.map(r=>r.totalSales),backgroundColor:['#e5e7eb','#d1d5db','#1e2c3a'],borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a1f2e',callbacks:{label:c=>'¥'+Number(c.raw).toLocaleString()}}},scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#9ca3af'}},y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:9},color:'#9ca3af',callback:v=>(v/10000).toFixed(0)+'万'}}}}});
 }
 
 // ===== 経理 =====
-function initSelects() {
-  const now = new Date();
-  let yOpts='', mOpts='';
-  for (let y=now.getFullYear(); y>=now.getFullYear()-3; y--) yOpts+=`<option value="${y}">${y}年</option>`;
-  for (let m=1; m<=12; m++) mOpts+=`<option value="${m}" ${m===now.getMonth()+1?'selected':''}>${m}月</option>`;
-  ['statsYear','accYear'].forEach(id => document.getElementById(id).innerHTML = yOpts);
-  ['statsMonth','accMonth'].forEach(id => document.getElementById(id).innerHTML = mOpts);
-}
-
-document.getElementById('genAccBtn').addEventListener('click', async function() {
-  const year = Number(document.getElementById('accYear').value);
-  const month = Number(document.getElementById('accMonth').value);
-  document.getElementById('genAccBtnText').textContent='生成中…';
-  document.getElementById('genAccSpinner').style.display='block';
-  document.getElementById('accResult').style.display='none';
-  this.disabled=true;
+async function loadAccounting() {
+  const y=parseInt(document.getElementById('acc-year').value);
+  const m=parseInt(document.getElementById('acc-month').value);
+  document.getElementById('acc-report').innerHTML='<span class="spinner"></span>';
   try {
-    showToast('経理シート機能は準備中です', true); return;
-    if (r.success) {
-      document.getElementById('accResultMsg').textContent = r.message;
-      document.getElementById('accSheetLink').href = '#';
-      document.getElementById('accResult').style.display='block';
-      showToast('✅ 経理シートを生成しました');
-    } else showToast(r.message,true);
-  } catch(e) { showToast('経理シート生成エラー',true); }
-  finally { document.getElementById('genAccBtnText').textContent='経理シートを生成する'; document.getElementById('genAccSpinner').style.display='none'; this.disabled=false; }
-});
-
-
-// ===== 初期化（マスタとホームデータを並列取得） =====
-async function init() {
-  updateDate();
-  initSelects();
-  // マスタとホームデータを同時に取得
-  await loadInitData();
+    const d = await GET('/api/getMonthReport',{year:y,month:m});
+    const s = d.summary;
+    const groups={};
+    d.records.forEach(r=>{(groups[r.date]=groups[r.date]||[]).push(r);});
+    document.getElementById('acc-report').innerHTML=`
+      <div style="text-align:center;margin-bottom:16px;">
+        <div style="font-size:18px;font-weight:800;">あまと整体院 月次レポート</div>
+        <div style="color:var(--sub);margin-top:4px;">${d.year}年${d.month}月</div>
+      </div>
+      <div class="card card-pad" style="margin-bottom:12px;">
+        <table class="data-table">
+          <thead><tr><th>種別</th><th>件数</th><th>売上</th></tr></thead>
+          <tbody>
+            <tr><td>新規</td><td>${s.shinkiCount}件</td><td style="font-weight:700;">${fmt(s.shinkiSales)}</td></tr>
+            <tr><td>常連</td><td>${s.jorenCount}件</td><td style="font-weight:700;">${fmt(s.jorenSales)}</td></tr>
+            ${s.otherCount>0?`<tr><td>その他</td><td>${s.otherCount}件</td><td style="font-weight:700;">${fmt(s.otherSales)}</td></tr>`:''}
+            <tr style="background:var(--accent-l);"><td style="font-weight:800;color:var(--accent);">合計</td><td style="font-weight:800;color:var(--accent);">${s.totalCount}件</td><td style="font-weight:800;color:var(--accent);">${fmt(s.totalSales)}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card card-pad">
+        <p class="section-title">日別明細</p>
+        ${Object.entries(groups).map(([date,items])=>`
+          <div style="margin-bottom:12px;">
+            <div style="font-size:12px;font-weight:700;color:var(--sub);padding:4px 0;border-bottom:1px solid var(--border);margin-bottom:4px;">${date}（${items.length}件 / ${fmt(items.reduce((a,r)=>a+r.amount,0))}）</div>
+            ${items.map(r=>`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;"><span style="color:var(--sub2);">${r.time}</span><span class="badge ${r.type==='新規'?'badge-shinki':r.type==='常連'?'badge-joren':'badge-other'}">${esc(r.type)}</span><span style="font-weight:600;">${fmt(r.amount)}</span></div>`).join('')}
+          </div>
+        `).join('')}
+        ${!d.records.length?'<div style="text-align:center;color:var(--sub2);padding:16px;">この月のデータがありません</div>':''}
+      </div>`;
+  } catch(e) { toast('レポート取得エラー',true); }
 }
+
+function downloadCsv() {
+  const y=document.getElementById('acc-year').value;
+  const m=document.getElementById('acc-month').value;
+  window.open(API+`/api/getCsv?year=${y}&month=${m}`);
+}
+
+function downloadCsvFrom() {
+  const y=document.getElementById('csv-year').value;
+  const m=document.getElementById('csv-month').value;
+  window.open(API+`/api/getCsv?year=${y}&month=${m}`);
+}
+
 init();
 </script>
 </body>
