@@ -117,6 +117,29 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 /* ビュータブ */
 .vtabs{display:flex;background:#edf0f4;border-radius:11px;padding:3px;margin-bottom:14px;}
 .vtab{flex:1;padding:9px 0;text-align:center;font-size:13px;font-weight:700;color:var(--sub);border:none;background:none;border-radius:9px;transition:background .15s,color .15s;}
+
+/* カレンダー */
+.cal-wrap{background:#fff;border-radius:var(--r);box-shadow:var(--sh0);overflow:hidden;}
+.cal-header{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--border);}
+.cal-hd{text-align:center;font-size:11px;font-weight:800;padding:9px 2px;letter-spacing:.3px;}
+.cal-hd:first-child{color:#e53e3e;}
+.cal-hd:last-child{color:#3182ce;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);}
+.cal-cell{background:#fff;min-height:62px;padding:6px 5px;display:flex;flex-direction:column;gap:3px;cursor:default;}
+.cal-cell.has-sale{background:#f8faff;}
+.cal-cell.today{background:var(--navy);}
+.cal-cell.blank{background:#fafafa;}
+.cal-num{font-size:12px;font-weight:800;color:var(--sub);line-height:1;}
+.cal-cell.today .cal-num{color:rgba(255,255,255,.7);}
+.cal-cell:first-child .cal-num,.cal-cell:nth-child(7n+1) .cal-num{color:#e53e3e;}
+.cal-cell.today:first-child .cal-num,.cal-cell.today:nth-child(7n+1) .cal-num{color:rgba(255,150,150,.9);}
+.cal-cell:nth-child(7n) .cal-num{color:#3182ce;}
+.cal-cell.today:nth-child(7n) .cal-num{color:rgba(150,180,255,.9);}
+.cal-amt{font-size:11px;font-weight:900;color:var(--navy);letter-spacing:-.3px;line-height:1.2;}
+.cal-cell.today .cal-amt{color:#fff;}
+.cal-cnt{font-size:10px;color:var(--sub2);font-weight:600;}
+.cal-cell.today .cal-cnt{color:rgba(255,255,255,.6);}
+.cal-total-row{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-top:1px solid var(--border);background:#fff;}
 .vtab.active{background:#fff;color:var(--navy);box-shadow:0 1px 4px rgba(0,0,0,.1);}
 
 /* 年選択 */
@@ -327,6 +350,7 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       <button class="vtab" id="vtab-year" onclick="switchView('year')">年別</button>
       <button class="vtab active" id="vtab-month" onclick="switchView('month')">月別</button>
       <button class="vtab" id="vtab-day" onclick="switchView('day')">日別</button>
+      <button class="vtab" id="vtab-cal" onclick="switchView('cal')">暦</button>
     </div>
     <div id="view-year" style="display:none;">
       <div class="yg" id="year-selector"></div>
@@ -374,6 +398,27 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       </div>
       <div class="card cp gap"><div class="stitle">日別売上（棒グラフ）</div><div class="cw" style="height:250px;"><canvas id="day-chart"></canvas></div></div>
       <div class="card gap"><div style="padding:16px 16px 0;"><div class="stitle">日別実績</div></div><div id="day-table"></div></div>
+    </div>
+
+    <!-- カレンダー -->
+    <div id="view-cal" style="display:none;">
+      <div class="mnav">
+        <button class="mnav-btn" onclick="changeCalMonth(-1)">◀ 前月</button>
+        <span class="mnav-label" id="cal-month-label"></span>
+        <button class="mnav-btn" onclick="changeCalMonth(1)">翌月 ▶</button>
+      </div>
+      <div class="cal-wrap">
+        <div class="cal-header">
+          <div class="cal-hd">日</div><div class="cal-hd">月</div><div class="cal-hd">火</div>
+          <div class="cal-hd">水</div><div class="cal-hd">木</div><div class="cal-hd">金</div>
+          <div class="cal-hd">土</div>
+        </div>
+        <div class="cal-grid" id="cal-grid"><span class="spin"></span></div>
+        <div class="cal-total-row">
+          <span style="font-size:12px;font-weight:700;color:var(--sub);">月間合計</span>
+          <span style="font-size:18px;font-weight:900;color:var(--navy);" id="cal-total">—</span>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -615,12 +660,13 @@ function go(page) {
 let masterItems=[], statsView='month';
 let statsYear, statsMonth, dayYear, dayMonth, selectedYear, ledgerYear, ledgerMonth;
 let ledgerView='month', ledgerDayDate=new Date(), ledgerSelectedYear=new Date().getFullYear();
+let calYear, calMonth;
 let cHome=null, cDaily=null, cCompare=null, cYear=null, cDay=null;
 
 // ===== 集計ビュー =====
 function switchView(v) {
   statsView=v;
-  ['year','month','day'].forEach(t => {
+  ['year','month','day','cal'].forEach(t => {
     document.getElementById('vtab-'+t).classList.toggle('active',t===v);
     document.getElementById('view-'+t).style.display=t===v?'':'none';
   });
@@ -630,14 +676,15 @@ function loadCurrentView() {
   if (statsView==='month') loadMonthStats();
   if (statsView==='day')   loadDayStats();
   if (statsView==='year')  loadYearStats();
+  if (statsView==='cal')   loadCalendar();
 }
 
 // ===== 初期化 =====
 async function init() {
   const d=new Date(), dw=['日','月','火','水','木','金','土'];
   document.getElementById('home-date').textContent=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${dw[d.getDay()]}）`;
-  statsYear=dayYear=ledgerYear=selectedYear=d.getFullYear();
-  statsMonth=dayMonth=ledgerMonth=d.getMonth()+1;
+  statsYear=dayYear=ledgerYear=selectedYear=calYear=d.getFullYear();
+  statsMonth=dayMonth=ledgerMonth=calMonth=d.getMonth()+1;
   updateStatsLabel(); updateDayLabel(); updateLedgerLabel(); updateLedgerDayLabel();
   document.getElementById('home-month-label').textContent=`${d.getMonth()+1}月`;
   initSelects(); buildYearSelector(); buildLedgerYearSelector();
@@ -1054,6 +1101,66 @@ async function loadYearStats() {
     });
     document.getElementById('year-table').innerHTML=`<table class="tbl"><thead><tr><th>月</th><th class="r">件数</th><th class="r">新規</th><th class="r">常連</th><th class="r">合計</th></tr></thead><tbody>${results.map((r,i)=>r.totalCount>0?`<tr><td style="font-weight:700;">${i+1}月</td><td class="r" style="color:var(--sub);">${r.totalCount}件</td><td class="r">${r.shinkiSales>0?fmt(r.shinkiSales):'—'}</td><td class="r">${r.jorenSales>0?fmt(r.jorenSales):'—'}</td><td class="num">${fmt(r.totalSales)}</td></tr>`:'').join('')}<tr class="tr-t"><td>合計</td><td class="r">${totalCount}件</td><td class="r">${fmt(shinkiSales)}</td><td class="r">${fmt(jorenSales)}</td><td class="num">${fmt(totalSales)}</td></tr></tbody></table>`;
   } catch(e) { if(e.message!=='認証切れ') toast('年別集計エラー',true); }
+}
+
+// ===== カレンダー =====
+function updateCalLabel() {
+  document.getElementById('cal-month-label').textContent = `${calYear}年${calMonth}月`;
+}
+function changeCalMonth(d) {
+  calMonth += d;
+  if (calMonth > 12) { calMonth = 1; calYear++; }
+  if (calMonth < 1)  { calMonth = 12; calYear--; }
+  updateCalLabel();
+  loadCalendar();
+}
+
+async function loadCalendar() {
+  updateCalLabel();
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '<span class="spin"></span>';
+  document.getElementById('cal-total').textContent = '—';
+  try {
+    const data = await GET('/api/getDailyBreakdown', { year: calYear, month: calMonth });
+    const days = data.days; // [{day, total, count, shinki, joren}, ...]
+    const now = new Date();
+    const todayY = now.getFullYear(), todayM = now.getMonth()+1, todayD = now.getDate();
+
+    // 月の1日が何曜日か（0=日）
+    const firstDow = new Date(calYear, calMonth-1, 1).getDay();
+    const daysInMonth = days.length;
+    const totalSales = days.reduce((a, d) => a + d.total, 0);
+
+    let html = '';
+    // 最初の空白マス
+    for (let i = 0; i < firstDow; i++) {
+      html += '<div class="cal-cell blank"></div>';
+    }
+    // 日付マス
+    days.forEach(d => {
+      const isToday = (calYear===todayY && calMonth===todayM && d.day===todayD);
+      const hasSale = d.total > 0;
+      let cls = 'cal-cell';
+      if (isToday) cls += ' today';
+      else if (hasSale) cls += ' has-sale';
+      const amtHtml = hasSale
+        ? `<div class="cal-amt">${fmtS(d.total)}</div><div class="cal-cnt">${d.count}件</div>`
+        : '';
+      html += `<div class="${cls}"><div class="cal-num">${d.day}</div>${amtHtml}</div>`;
+    });
+    // 末尾の空白マス（7の倍数になるよう）
+    const total = firstDow + daysInMonth;
+    const remainder = total % 7;
+    if (remainder !== 0) {
+      for (let i = 0; i < 7 - remainder; i++) {
+        html += '<div class="cal-cell blank"></div>';
+      }
+    }
+    grid.innerHTML = html;
+    document.getElementById('cal-total').textContent = fmt(totalSales);
+  } catch(e) {
+    grid.innerHTML = '<div style="padding:20px;text-align:center;color:var(--neg);grid-column:span 7;">取得エラー</div>';
+  }
 }
 
 // ===== 経理 =====
