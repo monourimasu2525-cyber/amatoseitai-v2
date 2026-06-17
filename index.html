@@ -309,7 +309,7 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <div id="lview-month">
       <div class="mnav">
         <button class="mnav-btn" onclick="changeLedgerMonth(-1)">◀ 前月</button>
-        <span class="mnav-label" id="ledger-month-label"></span>
+        <span class="mnav-label" id="ledger-month-label" onclick="openMonthPicker('ledger')" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:4px;"></span>
         <button class="mnav-btn" onclick="changeLedgerMonth(1)">翌月 ▶</button>
       </div>
       <div class="card gap">
@@ -325,9 +325,10 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <div id="lview-day" style="display:none;">
       <div class="mnav">
         <button class="mnav-btn" onclick="changeLedgerDay(-1)">◀ 前日</button>
-        <span class="mnav-label" id="ledger-day-label"></span>
+        <span class="mnav-label" id="ledger-day-label" onclick="openDayPicker()" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:4px;"></span>
         <button class="mnav-btn" onclick="changeLedgerDay(1)">翌日 ▶</button>
       </div>
+      <input type="date" id="day-picker-input" style="display:none;" onchange="onDayPickerChange(this.value)">
       <div class="card gap">
         <div style="padding:14px 16px 0;"><div class="stitle">本日合計</div></div>
         <div style="padding:0 16px 14px;display:flex;gap:20px;flex-wrap:wrap;">
@@ -369,7 +370,7 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <div id="view-month">
       <div class="mnav">
         <button class="mnav-btn" onclick="changeStatsMonth(-1)">◀ 前月</button>
-        <span class="mnav-label" id="stats-month-label"></span>
+        <span class="mnav-label" id="stats-month-label" onclick="openMonthPicker('stats')" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:4px;"></span>
         <button class="mnav-btn" onclick="changeStatsMonth(1)">翌月 ▶</button>
       </div>
       <div class="kpi-main gap">
@@ -393,7 +394,7 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <div id="view-day" style="display:none;">
       <div class="mnav">
         <button class="mnav-btn" onclick="changeDayMonth(-1)">◀ 前月</button>
-        <span class="mnav-label" id="day-month-label"></span>
+        <span class="mnav-label" id="day-month-label" onclick="openMonthPicker('day')" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:4px;"></span>
         <button class="mnav-btn" onclick="changeDayMonth(1)">翌月 ▶</button>
       </div>
       <div class="card cp gap"><div class="stitle">日別売上（棒グラフ）</div><div class="cw" style="height:250px;"><canvas id="day-chart"></canvas></div></div>
@@ -404,7 +405,7 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <div id="view-cal" style="display:none;">
       <div class="mnav">
         <button class="mnav-btn" onclick="changeCalMonth(-1)">◀ 前月</button>
-        <span class="mnav-label" id="cal-month-label"></span>
+        <span class="mnav-label" id="cal-month-label" onclick="openMonthPicker('cal')" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:4px;"></span>
         <button class="mnav-btn" onclick="changeCalMonth(1)">翌月 ▶</button>
       </div>
       <div class="cal-wrap">
@@ -495,6 +496,18 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       </div>
       <div id="import-result" class="import-result"></div>
     </div>
+  </div>
+</div>
+
+<!-- 月選択モーダル -->
+<div class="modal" id="month-picker-modal">
+  <div class="mbox">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <button class="mnav-btn" onclick="pickerChangeYear(-1)">◀</button>
+      <div style="font-size:18px;font-weight:900;color:var(--navy);" id="picker-year-label"></div>
+      <button class="mnav-btn" onclick="pickerChangeYear(1)">▶</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;" id="picker-month-grid"></div>
   </div>
 </div>
 
@@ -1101,6 +1114,70 @@ async function loadYearStats() {
     });
     document.getElementById('year-table').innerHTML=`<table class="tbl"><thead><tr><th>月</th><th class="r">件数</th><th class="r">新規</th><th class="r">常連</th><th class="r">合計</th></tr></thead><tbody>${results.map((r,i)=>r.totalCount>0?`<tr><td style="font-weight:700;">${i+1}月</td><td class="r" style="color:var(--sub);">${r.totalCount}件</td><td class="r">${r.shinkiSales>0?fmt(r.shinkiSales):'—'}</td><td class="r">${r.jorenSales>0?fmt(r.jorenSales):'—'}</td><td class="num">${fmt(r.totalSales)}</td></tr>`:'').join('')}<tr class="tr-t"><td>合計</td><td class="r">${totalCount}件</td><td class="r">${fmt(shinkiSales)}</td><td class="r">${fmt(jorenSales)}</td><td class="num">${fmt(totalSales)}</td></tr></tbody></table>`;
   } catch(e) { if(e.message!=='認証切れ') toast('年別集計エラー',true); }
+}
+
+// ===== 月ピッカー =====
+let pickerTarget = '', pickerYear = new Date().getFullYear();
+
+function openMonthPicker(target) {
+  pickerTarget = target;
+  // 現在の年をターゲットに合わせる
+  if (target==='stats')  pickerYear = statsYear;
+  if (target==='day')    pickerYear = dayYear;
+  if (target==='ledger') pickerYear = ledgerYear;
+  if (target==='cal')    pickerYear = calYear;
+  renderPickerGrid();
+  openModal('month-picker-modal');
+}
+
+function renderPickerGrid() {
+  document.getElementById('picker-year-label').textContent = `${pickerYear}年`;
+  const now = new Date();
+  // 現在選択中の月
+  let curMonth = 0;
+  if (pickerTarget==='stats')  curMonth = statsMonth;
+  if (pickerTarget==='day')    curMonth = dayMonth;
+  if (pickerTarget==='ledger') curMonth = ledgerMonth;
+  if (pickerTarget==='cal')    curMonth = calMonth;
+  document.getElementById('picker-month-grid').innerHTML =
+    Array.from({length:12}, (_,i) => i+1).map(m => {
+      const isActive = (m === curMonth && pickerYear === (pickerTarget==='stats'?statsYear:pickerTarget==='day'?dayYear:pickerTarget==='ledger'?ledgerYear:calYear));
+      return `<button onclick="selectPickerMonth(${m})" style="padding:12px 0;border-radius:10px;font-size:14px;font-weight:700;border:1.5px solid ${isActive?'var(--navy)':'var(--border)'};background:${isActive?'var(--navy)':'#fff'};color:${isActive?'#fff':'var(--text)'};">${m}月</button>`;
+    }).join('');
+}
+
+function pickerChangeYear(d) {
+  pickerYear += d;
+  renderPickerGrid();
+}
+
+function selectPickerMonth(m) {
+  closeModal('month-picker-modal');
+  if (pickerTarget === 'stats') {
+    statsYear = pickerYear; statsMonth = m; updateStatsLabel(); loadMonthStats();
+  } else if (pickerTarget === 'day') {
+    dayYear = pickerYear; dayMonth = m; updateDayLabel(); loadDayStats();
+  } else if (pickerTarget === 'ledger') {
+    ledgerYear = pickerYear; ledgerMonth = m; updateLedgerLabel(); loadLedger();
+  } else if (pickerTarget === 'cal') {
+    calYear = pickerYear; calMonth = m; loadCalendar();
+  }
+}
+
+// ===== 日ピッカー =====
+function openDayPicker() {
+  const d = ledgerDayDate;
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+  const input = document.getElementById('day-picker-input');
+  input.value = `${y}-${m}-${dd}`;
+  input.showPicker ? input.showPicker() : input.click();
+}
+function onDayPickerChange(val) {
+  if (!val) return;
+  const [y, m, d] = val.split('-').map(Number);
+  ledgerDayDate = new Date(y, m-1, d);
+  updateLedgerDayLabel();
+  loadLedgerDay();
 }
 
 // ===== カレンダー =====
