@@ -441,7 +441,7 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <!-- CSVインポート -->
     <div class="stitle">CSVインポート</div>
     <div class="card cp gap">
-      <div style="font-size:12px;color:var(--sub);margin-bottom:12px;">エクスポートしたCSVと同じ形式（日付,時刻,種別,金額）でインポートできます。</div>
+      <div style="font-size:12px;color:var(--sub);margin-bottom:12px;">形式：日付,種別,金額（例: 2024/6/1,新規,3270）</div>
       <div class="import-area" id="import-area" onclick="document.getElementById('csv-file').click()">
         <input type="file" id="csv-file" accept=".csv,text/csv" onchange="handleCsvFile(this.files[0])">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--sub2)" stroke-width="1.5" style="margin-bottom:8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>

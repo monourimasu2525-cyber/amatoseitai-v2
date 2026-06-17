@@ -327,8 +327,8 @@ app.get('/api/getCsv', auth, async (req, res) => {
     }
     q += ` ORDER BY created_at`;
     const r = await pool.query(q, params);
-    const rows = [['日付','時刻','種別','金額','入力方法']];
-    r.rows.forEach(row => rows.push([fmtDate(row.created_at), fmtTime(row.created_at), row.type, row.amount, row.input_method]));
+    const rows = [['日付','種別','金額']];
+    r.rows.forEach(row => rows.push([fmtDate(row.created_at), row.type, row.amount]));
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="sales_${y||'all'}_${m||'all'}.csv"`);
     res.send('﻿' + rows.map(r => r.join(',')).join('\n'));
@@ -353,16 +353,16 @@ app.post('/api/importCsv', auth, upload.single('file'), async (req, res) => {
       await client.query('BEGIN');
       for (const line of dataLines) {
         const cols = line.split(',');
-        if (cols.length < 4) { skipped++; continue; }
-        const [dateStr, timeStr, type, amountStr] = cols;
+        if (cols.length < 3) { skipped++; continue; }
+        // 形式: 日付,種別,金額
+        const [dateStr, type, amountStr] = cols;
         const amount = parseInt(amountStr);
         if (!dateStr || !type || isNaN(amount) || amount <= 0) { skipped++; continue; }
 
-        // 日付と時刻をJSTとして解釈→UTCに変換
+        // 日付をJSTとして解釈→UTCに変換（時刻は正午扱い）
         const [y, m, d] = dateStr.trim().split('/').map(Number);
-        const [hh, mm] = (timeStr||'00:00').trim().split(':').map(Number);
         if (!y || !m || !d) { skipped++; continue; }
-        const jstMs = Date.UTC(y, m-1, d, hh||0, mm||0, 0) - 9*3600*1000;
+        const jstMs = Date.UTC(y, m-1, d, 12, 0, 0) - 9*3600*1000;
         const ts = new Date(jstMs);
 
         await client.query(
