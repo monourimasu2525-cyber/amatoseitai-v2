@@ -688,12 +688,12 @@ async function loadHistory() {
   }
 
   // キャッシュ即表示（30秒TTL）
-  const cached = cacheGet('history', 30000);
+  const cached = lsGet('history', 30000);
   if (cached) renderHistory(cached);
 
   try {
     const d = await apiGet('/api/getRecentHistory', {days:30});
-    cacheSet('history', d);
+    lsSet('history', d);
     renderHistory(d);
   } catch(e) {
     if (!cached) document.getElementById('historyList').innerHTML = '<div style="text-align:center;color:var(--red);padding:16px;">読込エラー</div>';
