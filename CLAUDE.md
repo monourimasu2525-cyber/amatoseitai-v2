@@ -16,7 +16,7 @@ git push だけで両方自動デプロイされる
 - index.js   → Railway（自動）
 ```
 
-git push は自分でやる。Claudeは勝手にpushしない。
+git push はClaudeが行う。
 
 ## コード方針
 
