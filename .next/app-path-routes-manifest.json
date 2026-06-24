@@ -1,0 +1,18 @@
+{
+  "/api/csv/route": "/api/csv",
+  "/api/history/route": "/api/history",
+  "/api/init/route": "/api/init",
+  "/api/login/route": "/api/login",
+  "/api/master/route": "/api/master",
+  "/_not-found/page": "/_not-found",
+  "/api/register/route": "/api/register",
+  "/api/report/route": "/api/report",
+  "/api/sales/[id]/route": "/api/sales/[id]",
+  "/api/master/[id]/route": "/api/master/[id]",
+  "/api/sales/route": "/api/sales",
+  "/api/stats/daily/route": "/api/stats/daily",
+  "/api/stats/day/route": "/api/stats/day",
+  "/api/stats/month/route": "/api/stats/month",
+  "/api/stats/today/route": "/api/stats/today",
+  "/page": "/"
+}

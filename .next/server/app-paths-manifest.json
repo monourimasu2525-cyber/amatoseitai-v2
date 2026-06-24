@@ -1,0 +1,18 @@
+{
+  "/api/csv/route": "app/api/csv/route.js",
+  "/api/history/route": "app/api/history/route.js",
+  "/api/init/route": "app/api/init/route.js",
+  "/api/login/route": "app/api/login/route.js",
+  "/api/master/route": "app/api/master/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/register/route": "app/api/register/route.js",
+  "/api/report/route": "app/api/report/route.js",
+  "/api/sales/[id]/route": "app/api/sales/[id]/route.js",
+  "/api/master/[id]/route": "app/api/master/[id]/route.js",
+  "/api/sales/route": "app/api/sales/route.js",
+  "/api/stats/daily/route": "app/api/stats/daily/route.js",
+  "/api/stats/day/route": "app/api/stats/day/route.js",
+  "/api/stats/month/route": "app/api/stats/month/route.js",
+  "/api/stats/today/route": "app/api/stats/today/route.js",
+  "/page": "app/page.js"
+}
