@@ -95,6 +95,16 @@ async function initDb() {
     );
     ALTER TABLE sales ADD COLUMN IF NOT EXISTS clinic_id INTEGER REFERENCES clinics(id) ON DELETE SET NULL;
     ALTER TABLE master_items ADD COLUMN IF NOT EXISTS clinic_id INTEGER REFERENCES clinics(id) ON DELETE SET NULL;
+    CREATE TABLE IF NOT EXISTS visits (
+      id SERIAL PRIMARY KEY,
+      clinic_id INTEGER NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
+      customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+      sale_id INTEGER REFERENCES sales(id) ON DELETE SET NULL,
+      memo TEXT DEFAULT '',
+      visited_at TIMESTAMPTZ DEFAULT NOW(),
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_visits_customer ON visits(customer_id, visited_at DESC);
   `);
 }
 
@@ -366,6 +376,91 @@ app.delete('/api/customers/:id', auth, async (req, res) => {
     if (!clinicId) return res.json({ success: false, message: '院が登録されていません' });
     await pool.query('DELETE FROM customers WHERE id=$1 AND clinic_id=$2', [req.params.id, clinicId]);
     res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// ===== 来院履歴API =====
+// 顧客の来院履歴取得
+app.get('/api/visits', auth, async (req, res) => {
+  try {
+    const clinicId = await getClinicId(req.userId);
+    if (!clinicId) return res.json({ success: true, visits: [] });
+    const { customer_id } = req.query;
+    let q = `SELECT v.*, s.type, s.amount FROM visits v LEFT JOIN sales s ON v.sale_id=s.id WHERE v.clinic_id=$1`;
+    const params = [clinicId];
+    if (customer_id) { q += ' AND v.customer_id=$2'; params.push(customer_id); }
+    q += ' ORDER BY v.visited_at DESC LIMIT 100';
+    const r = await pool.query(q, params);
+    res.json({ success: true, visits: r.rows });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// 来院登録（売上作成 + 来院記録を同時に）
+app.post('/api/visits', auth, async (req, res) => {
+  try {
+    const clinicId = await getClinicId(req.userId);
+    if (!clinicId) return res.json({ success: false, message: '院が登録されていません' });
+    const { customer_id, type, amount, memo = '' } = req.body;
+    if (!customer_id) return res.json({ success: false, message: '顧客を指定してください' });
+    if (!type) return res.json({ success: false, message: '種別を入力してください' });
+
+    // トランザクションで売上 + 来院記録を同時作成
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const sale = await client.query(
+        'INSERT INTO sales (user_id, clinic_id, type, amount) VALUES ($1,$2,$3,$4) RETURNING *',
+        [req.userId, clinicId, type, parseInt(amount) || 0]
+      );
+      const visit = await client.query(
+        'INSERT INTO visits (clinic_id, customer_id, sale_id, memo) VALUES ($1,$2,$3,$4) RETURNING *',
+        [clinicId, customer_id, sale.rows[0].id, memo]
+      );
+      await client.query('COMMIT');
+      res.json({ success: true, visit: visit.rows[0], sale: sale.rows[0] });
+    } catch(e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// 来院記録削除（関連売上も削除）
+app.delete('/api/visits/:id', auth, async (req, res) => {
+  try {
+    const clinicId = await getClinicId(req.userId);
+    if (!clinicId) return res.json({ success: false, message: '院が登録されていません' });
+    const v = await pool.query('SELECT * FROM visits WHERE id=$1 AND clinic_id=$2', [req.params.id, clinicId]);
+    if (!v.rows.length) return res.json({ success: false, message: '来院記録が見つかりません' });
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      if (v.rows[0].sale_id) await client.query('DELETE FROM sales WHERE id=$1', [v.rows[0].sale_id]);
+      await client.query('DELETE FROM visits WHERE id=$1', [req.params.id]);
+      await client.query('COMMIT');
+    } catch(e) { await client.query('ROLLBACK'); throw e; }
+    finally { client.release(); }
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// 顧客ごとの来院統計（一覧表示用）
+app.get('/api/customers/stats', auth, async (req, res) => {
+  try {
+    const clinicId = await getClinicId(req.userId);
+    if (!clinicId) return res.json({ success: true, stats: {} });
+    const r = await pool.query(
+      `SELECT customer_id, COUNT(*) as visit_count, MAX(visited_at) as last_visit, SUM(s.amount) as total_amount
+       FROM visits v LEFT JOIN sales s ON v.sale_id=s.id
+       WHERE v.clinic_id=$1
+       GROUP BY customer_id`,
+      [clinicId]
+    );
+    const stats: Record<string, unknown> = {};
+    r.rows.forEach(row => { stats[row.customer_id] = row; });
+    res.json({ success: true, stats });
   } catch(e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
