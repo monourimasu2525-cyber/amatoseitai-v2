@@ -27,12 +27,13 @@ export default function LoginPage() {
     try {
       const res = await fetch(API + '/api/login', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       })
       const data = await res.json()
       if (data.success) {
-        setAuth(data.token, data.email)
+        setAuth('', data.email)
         router.push('/app/dashboard')
       } else {
         setError(data.message)

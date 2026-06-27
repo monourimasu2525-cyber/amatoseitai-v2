@@ -28,12 +28,13 @@ export default function SignupPage() {
     try {
       const res = await fetch(API + '/api/register', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       })
       const data = await res.json()
       if (data.success) {
-        setAuth(data.token, data.email)
+        setAuth('', data.email)
         router.push('/onboarding')
       } else {
         setError(data.message)
