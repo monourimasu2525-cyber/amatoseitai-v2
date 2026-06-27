@@ -16,19 +16,21 @@
 - [x] /app/analytics → 集計（年別/月別/日別、Chart.js グラフ、KPI、3ヶ月比較）
 - [x] /app/settings → 設定（アカウント・マスタCRUD・CSV出力/インポート）
 - [x] /app/accounting → 経理レポート（月次レポート・日別明細・印刷/PDF・CSV）
-- [x] ビルド成功（全9ルート・型エラーなし）
+- [x] Vercel デプロイ完了 → https://amatoseitai-v2.vercel.app
 
-### 次にやること
-1. Vercel デプロイ設定
-   - Root Directory: `apps/web`
-   - 環境変数: `NEXT_PUBLIC_API_URL=https://amatoseitai-v2-production.up.railway.app`
-   - git push するだけで自動デプロイ
+### 本番URL
+- **Vercel（新Next.jsアプリ）**: https://amatoseitai-v2.vercel.app
+- **Railway API**: https://amatoseitai-v2-production.up.railway.app
+- **GitHub Pages（旧index.html）**: まだ生きている（廃止予定）
 
 ## 構成
 - Railway: index.js（変更なし）
-- Vercel: apps/web/ → Root Directory を apps/web に設定
+- Vercel: apps/web/ （Root Directory: apps/web）
 - 環境変数: NEXT_PUBLIC_API_URL=https://amatoseitai-v2-production.up.railway.app
 
-## 将来の方針
-- 顧客管理・分析はPhase 4で追加（マルチテナント設計から）
+## 次のフェーズ（Phase 2以降）
+- Phase 2: オンボーディング導線
+- Phase 3: 認証強化（localStorage→Cookie）
+- Phase 4: マルチテナント設計 + 顧客管理・分析機能
+- Phase 5: Stripe連携
 - 詳細は SPEC.md 参照
