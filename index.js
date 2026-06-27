@@ -464,6 +464,85 @@ app.get('/api/customers/stats', auth, async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
+// 顧客分析API
+app.get('/api/analytics/customers', auth, async (req, res) => {
+  try {
+    const clinicId = await getClinicId(req.userId);
+    if (!clinicId) return res.json({ success: false, message: '院が登録されていません' });
+
+    // リピート率・平均LTV・平均来院回数
+    const kpiR = await pool.query(`
+      SELECT
+        COUNT(DISTINCT c.id) as total_customers,
+        COUNT(DISTINCT CASE WHEN vc.visit_count >= 2 THEN c.id END) as repeat_customers,
+        COALESCE(AVG(vc.visit_count), 0) as avg_visits,
+        COALESCE(AVG(vc.total_amount), 0) as avg_ltv
+      FROM customers c
+      LEFT JOIN (
+        SELECT v.customer_id, COUNT(*) as visit_count, COALESCE(SUM(s.amount), 0) as total_amount
+        FROM visits v LEFT JOIN sales s ON v.sale_id = s.id
+        WHERE v.clinic_id = $1
+        GROUP BY v.customer_id
+      ) vc ON vc.customer_id = c.id
+      WHERE c.clinic_id = $1
+    `, [clinicId]);
+
+    // 休眠顧客（60日以上来院なし、または来院記録なし）
+    const dormantR = await pool.query(`
+      SELECT c.id, c.name, c.phone,
+        MAX(v.visited_at) as last_visit,
+        COALESCE(EXTRACT(DAY FROM NOW() - MAX(v.visited_at))::int, NULL) as days_since,
+        COUNT(v.id) as visit_count
+      FROM customers c
+      LEFT JOIN visits v ON v.customer_id = c.id AND v.clinic_id = $1
+      WHERE c.clinic_id = $1
+      GROUP BY c.id, c.name, c.phone
+      HAVING MAX(v.visited_at) IS NULL OR MAX(v.visited_at) < NOW() - INTERVAL '60 days'
+      ORDER BY COALESCE(MAX(v.visited_at), c.created_at) ASC
+      LIMIT 10
+    `, [clinicId]);
+
+    // 優良顧客TOP5（累計売上順）
+    const topR = await pool.query(`
+      SELECT c.id, c.name, COUNT(v.id) as visit_count, COALESCE(SUM(s.amount), 0) as total_amount
+      FROM customers c
+      LEFT JOIN visits v ON v.customer_id = c.id AND v.clinic_id = $1
+      LEFT JOIN sales s ON s.id = v.sale_id
+      WHERE c.clinic_id = $1
+      GROUP BY c.id, c.name
+      ORDER BY total_amount DESC
+      LIMIT 5
+    `, [clinicId]);
+
+    // 月別新規顧客数（過去6ヶ月）
+    const monthlyR = await pool.query(`
+      SELECT TO_CHAR(DATE_TRUNC('month', created_at), 'YYYY-MM') as month, COUNT(*)::int as count
+      FROM customers
+      WHERE clinic_id = $1 AND created_at >= NOW() - INTERVAL '6 months'
+      GROUP BY month ORDER BY month
+    `, [clinicId]);
+
+    const kpi = kpiR.rows[0];
+    const total = parseInt(kpi.total_customers) || 0;
+    const repeat = parseInt(kpi.repeat_customers) || 0;
+    const dormantCount = dormantR.rows.length;
+
+    res.json({
+      success: true,
+      total_customers: total,
+      repeat_customers: repeat,
+      repeat_rate: total > 0 ? Math.round(repeat / total * 100) : 0,
+      churn_count: dormantCount,
+      churn_rate: total > 0 ? Math.round(dormantCount / total * 100) : 0,
+      avg_visits: Math.round(parseFloat(kpi.avg_visits) * 10) / 10,
+      avg_ltv: Math.round(parseFloat(kpi.avg_ltv)),
+      dormant: dormantR.rows,
+      top_customers: topR.rows,
+      monthly_new: monthlyR.rows,
+    });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
 // ===== データAPI（認証必須） =====
 app.get('/api/initData', auth, async (req, res) => {
   try {
