@@ -74,15 +74,15 @@ export default function SettingsPage() {
   async function saveClinic() {
     if (!clinicName.trim()) { toast('院名を入力してください', true); return }
     setClinicSaving(true)
-    const r = await PUT<{ success: boolean; message?: string }>('/api/clinics/me', { name: clinicName, daily_capacity: parseInt(dailyCapacity) || 11 })
+    const r = await PUT('/api/clinics/me', { name: clinicName, daily_capacity: parseInt(dailyCapacity) || 11 }) as { success: boolean; message?: string }
     setClinicSaving(false)
-    if (r.success) toast('保存しました') else toast(r.message || 'エラー', true)
+    if (r.success) { toast('保存しました') } else { toast(r.message || 'エラー', true) }
   }
 
   async function addChannel(name: string) {
     if (!name.trim()) { toast('媒体名を入力してください', true); return }
-    const r = await POST<{ success: boolean; message?: string }>('/api/advertising-channels', { name })
-    if (r.success) { setNewChannel(''); loadChannels() } else toast(r.message || 'エラー', true)
+    const r = await POST('/api/advertising-channels', { name }) as { success: boolean; message?: string }
+    if (r.success) { setNewChannel(''); loadChannels() } else { toast(r.message || 'エラー', true) }
   }
 
   async function deleteChannel(id: number, name: string) {
