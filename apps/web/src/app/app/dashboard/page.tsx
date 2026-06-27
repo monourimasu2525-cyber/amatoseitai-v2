@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { GET, POST, PUT, DEL } from '@/lib/api'
 import type { InitData, MasterItem, Sale, MonthStats } from '@/types'
 import { Chart, registerables } from 'chart.js'
@@ -12,6 +13,7 @@ const fmt = (n: number) => '¥' + Number(n).toLocaleString()
 const fmtS = (n: number) => n >= 10000 ? (n / 10000).toFixed(1).replace('.0', '') + '万' : '¥' + Number(n).toLocaleString()
 
 export default function DashboardPage() {
+  const router = useRouter()
   const [master, setMaster] = useState<MasterItem[]>([])
   const [todayTotal, setTodayTotal] = useState(0)
   const [todayCount, setTodayCount] = useState(0)
@@ -62,6 +64,13 @@ export default function DashboardPage() {
     }
     setLoading(false)
   }, [toast])
+
+  // 院未設定なら clinic-setup へ
+  useEffect(() => {
+    GET<{ success: boolean; clinic: { id: number } | null }>('/api/clinics/me').then(d => {
+      if (!d.clinic) router.replace('/app/clinic-setup')
+    }).catch(() => {})
+  }, [router])
 
   useEffect(() => { loadData() }, [loadData])
 

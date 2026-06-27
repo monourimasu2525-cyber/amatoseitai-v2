@@ -68,6 +68,31 @@ async function initDb() {
       used BOOLEAN DEFAULT FALSE,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
+    CREATE TABLE IF NOT EXISTS clinics (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(100) NOT NULL,
+      slug VARCHAR(50) UNIQUE NOT NULL,
+      owner_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS memberships (
+      id SERIAL PRIMARY KEY,
+      clinic_id INTEGER NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      role VARCHAR(20) NOT NULL DEFAULT 'owner',
+      status VARCHAR(20) NOT NULL DEFAULT 'active',
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(clinic_id, user_id)
+    );
+    CREATE TABLE IF NOT EXISTS customers (
+      id SERIAL PRIMARY KEY,
+      clinic_id INTEGER NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
+      name VARCHAR(100) NOT NULL,
+      phone VARCHAR(20) DEFAULT '',
+      birthday DATE,
+      memo TEXT DEFAULT '',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
   `);
 }
 
@@ -180,6 +205,55 @@ app.post('/api/login', authLimiter, async (req, res) => {
 app.post('/api/logout', (req, res) => {
   res.clearCookie('auth_token', { ...COOKIE_OPTS, maxAge: 0 });
   res.json({ success: true });
+});
+
+// ===== 院（クリニック）API =====
+// 自分の院を取得
+app.get('/api/clinics/me', auth, async (req, res) => {
+  try {
+    const r = await pool.query(
+      'SELECT c.* FROM clinics c JOIN memberships m ON c.id=m.clinic_id WHERE m.user_id=$1 AND m.status=$2 LIMIT 1',
+      [req.userId, 'active']
+    );
+    res.json({ success: true, clinic: r.rows[0] || null });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// 院を作成
+app.post('/api/clinics', auth, async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name?.trim()) return res.json({ success: false, message: '院名を入力してください' });
+    // 既に院を持っている場合はエラー
+    const existing = await pool.query(
+      'SELECT c.id FROM clinics c JOIN memberships m ON c.id=m.clinic_id WHERE m.user_id=$1 LIMIT 1',
+      [req.userId]
+    );
+    if (existing.rows.length) return res.json({ success: false, message: '既に院が登録されています' });
+    const slug = 'clinic_' + req.userId + '_' + Date.now();
+    const clinic = await pool.query(
+      'INSERT INTO clinics (name, slug, owner_user_id) VALUES ($1,$2,$3) RETURNING *',
+      [name.trim(), slug, req.userId]
+    );
+    await pool.query(
+      'INSERT INTO memberships (clinic_id, user_id, role, status) VALUES ($1,$2,$3,$4)',
+      [clinic.rows[0].id, req.userId, 'owner', 'active']
+    );
+    res.json({ success: true, clinic: clinic.rows[0] });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// 院情報を更新
+app.put('/api/clinics/me', auth, async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name?.trim()) return res.json({ success: false, message: '院名を入力してください' });
+    const r = await pool.query(
+      'UPDATE clinics SET name=$1 WHERE owner_user_id=$2 RETURNING *',
+      [name.trim(), req.userId]
+    );
+    res.json({ success: true, clinic: r.rows[0] });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
 // パスワードリセット申請
