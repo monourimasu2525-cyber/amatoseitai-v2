@@ -181,7 +181,7 @@ async function getTodayStats(userId) {
   const now = new Date(), j = toJST(now);
   const { start, end } = jstRangeOfDay(j.getUTCFullYear(), j.getUTCMonth()+1, j.getUTCDate());
   const res = await pool.query(
-    `SELECT type, SUM(amount) as sales, COUNT(*) as cnt FROM sales WHERE user_id=$1 AND created_at>=$2 AND created_at<$3 GROUP BY type`,
+    `SELECT s.type, SUM(s.amount) as sales, COUNT(*) as cnt FROM sales s LEFT JOIN visits v ON v.sale_id=s.id WHERE s.user_id=$1 AND COALESCE(v.visited_at,s.created_at)>=$2 AND COALESCE(v.visited_at,s.created_at)<$3 GROUP BY s.type`,
     [userId, start, end]
   );
   const s = calcStats(res.rows);
@@ -192,7 +192,7 @@ async function getTodayStats(userId) {
 async function getMonthStats(userId, year, month) {
   const { start, end } = jstRangeOfMonth(year, month);
   const res = await pool.query(
-    `SELECT type, SUM(amount) as sales, COUNT(*) as cnt FROM sales WHERE user_id=$1 AND created_at>=$2 AND created_at<$3 GROUP BY type`,
+    `SELECT s.type, SUM(s.amount) as sales, COUNT(*) as cnt FROM sales s LEFT JOIN visits v ON v.sale_id=s.id WHERE s.user_id=$1 AND COALESCE(v.visited_at,s.created_at)>=$2 AND COALESCE(v.visited_at,s.created_at)<$3 GROUP BY s.type`,
     [userId, start, end]
   );
   return calcStats(res.rows);
@@ -806,7 +806,7 @@ app.post('/api/import/visits', auth, async (req, res) => {
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
-        const sale = await client.query('INSERT INTO sales (user_id, clinic_id, type, amount) VALUES ($1,$2,$3,$4) RETURNING *', [req.userId, clinicId, type, amount]);
+        const sale = await client.query('INSERT INTO sales (user_id, clinic_id, type, amount, created_at) VALUES ($1,$2,$3,$4,$5) RETURNING *', [req.userId, clinicId, type, amount, new Date(visitedAt)]);
         await client.query('INSERT INTO visits (clinic_id, customer_id, sale_id, memo, visited_at) VALUES ($1,$2,$3,$4,$5)', [clinicId, customerId, sale.rows[0].id, memo, new Date(visitedAt)]);
         await client.query('COMMIT');
         created++;
@@ -871,13 +871,13 @@ app.get('/api/getDailyBreakdown', auth, async (req, res) => {
     const m = parseInt(req.query.month) || new Date().getMonth()+1;
     const { start, end } = jstRangeOfMonth(y, m);
     const r = await pool.query(
-      `SELECT created_at, type, amount FROM sales WHERE user_id=$1 AND created_at>=$2 AND created_at<$3 ORDER BY created_at`,
+      `SELECT COALESCE(v.visited_at,s.created_at) as effective_date, s.type, s.amount FROM sales s LEFT JOIN visits v ON v.sale_id=s.id WHERE s.user_id=$1 AND COALESCE(v.visited_at,s.created_at)>=$2 AND COALESCE(v.visited_at,s.created_at)<$3 ORDER BY effective_date`,
       [req.userId, start, end]
     );
     const daysInMonth = new Date(y, m, 0).getDate();
     const days = Array.from({length: daysInMonth}, (_, i) => ({ day:i+1, total:0, shinki:0, joren:0, other:0, count:0 }));
     r.rows.forEach(row => {
-      const i = toJST(row.created_at).getUTCDate() - 1;
+      const i = toJST(row.effective_date).getUTCDate() - 1;
       if (i >= 0 && i < daysInMonth) {
         days[i].total += row.amount; days[i].count++;
         if (row.type==='新規') days[i].shinki += row.amount;
@@ -895,10 +895,10 @@ app.get('/api/getMonthReport', auth, async (req, res) => {
     const m = parseInt(req.query.month) || new Date().getMonth()+1;
     const { start, end } = jstRangeOfMonth(y, m);
     const r = await pool.query(
-      `SELECT * FROM sales WHERE user_id=$1 AND created_at>=$2 AND created_at<$3 ORDER BY created_at`,
+      `SELECT s.*, COALESCE(v.visited_at,s.created_at) as effective_date FROM sales s LEFT JOIN visits v ON v.sale_id=s.id WHERE s.user_id=$1 AND COALESCE(v.visited_at,s.created_at)>=$2 AND COALESCE(v.visited_at,s.created_at)<$3 ORDER BY effective_date`,
       [req.userId, start, end]
     );
-    const records = r.rows.map(row => ({ id:row.id, date:fmtDate(row.created_at), time:fmtTime(row.created_at), type:row.type, amount:row.amount }));
+    const records = r.rows.map(row => ({ id:row.id, date:fmtDate(row.effective_date), time:fmtTime(row.effective_date), type:row.type, amount:row.amount }));
     const s = calcStats(records.map(r => ({ ...r, cnt:1, sales:r.amount })));
     res.json({ year:y, month:m, records, summary:s });
   } catch(e) { res.status(500).json({ success:false, message:e.message }); }
@@ -911,10 +911,10 @@ app.get('/api/getDayRecords', auth, async (req, res) => {
     const d = parseInt(req.query.day)   || new Date().getDate();
     const { start, end } = jstRangeOfDay(y, m, d);
     const r = await pool.query(
-      `SELECT * FROM sales WHERE user_id=$1 AND created_at>=$2 AND created_at<$3 ORDER BY created_at`,
+      `SELECT s.*, COALESCE(v.visited_at,s.created_at) as effective_date FROM sales s LEFT JOIN visits v ON v.sale_id=s.id WHERE s.user_id=$1 AND COALESCE(v.visited_at,s.created_at)>=$2 AND COALESCE(v.visited_at,s.created_at)<$3 ORDER BY effective_date`,
       [req.userId, start, end]
     );
-    const records = r.rows.map(row => ({ id:row.id, date:fmtDate(row.created_at), time:fmtTime(row.created_at), type:row.type, amount:row.amount }));
+    const records = r.rows.map(row => ({ id:row.id, date:fmtDate(row.effective_date), time:fmtTime(row.effective_date), type:row.type, amount:row.amount }));
     const s = calcStats(records.map(r => ({ ...r, cnt:1, sales:r.amount })));
     res.json({ year:y, month:m, day:d, records, summary:s });
   } catch(e) { res.status(500).json({ success:false, message:e.message }); }
