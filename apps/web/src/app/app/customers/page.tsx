@@ -106,20 +106,22 @@ export default function CustomersPage() {
       {/* ヘッダー */}
       <div style={{ background: 'var(--primary)', padding: '20px 16px 16px', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ color: '#fff', fontSize: 18, fontWeight: 900, marginBottom: 12 }}>顧客管理</div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input
-            value={search}
-            onChange={e => { setSearch(e.target.value); load(e.target.value) }}
-            placeholder="名前・電話番号で検索"
-            style={{ flex: 1, padding: '9px 12px', borderRadius: 10, border: 'none', fontSize: 14, background: 'rgba(255,255,255,.15)', color: '#fff', outline: 'none' }}
-          />
-          <button onClick={openAdd} style={{ background: '#C4622D', color: '#fff', border: 'none', borderRadius: 10, padding: '9px 16px', fontSize: 14, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-            ＋ 追加
-          </button>
-        </div>
+        <input
+          value={search}
+          onChange={e => { setSearch(e.target.value); load(e.target.value) }}
+          placeholder="名前・電話番号で検索"
+          style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: 'none', fontSize: 14, background: 'rgba(255,255,255,.15)', color: '#fff', outline: 'none', boxSizing: 'border-box' as const }}
+        />
       </div>
 
-      <div style={{ padding: '10px 16px', fontSize: 13, color: 'var(--sub)', fontWeight: 600 }}>
+      {/* 顧客追加ボタン */}
+      <div style={{ padding: '12px 16px 4px' }}>
+        <button onClick={openAdd} style={{ width: '100%', background: '#fff', color: 'var(--primary)', border: '2px dashed var(--border)', borderRadius: 12, padding: '12px', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          <span style={{ fontSize: 18 }}>＋</span> 顧客を追加
+        </button>
+      </div>
+
+      <div style={{ padding: '8px 16px', fontSize: 13, color: 'var(--sub)', fontWeight: 600 }}>
         {loading ? '読み込み中...' : `${customers.length}件`}
       </div>
 
