@@ -48,7 +48,10 @@
 - [x] 顧客管理ページ /app/customers（一覧・追加・編集・削除・検索）
 - [x] GET/POST/PUT/DELETE /api/customers
 - [x] ナビに顧客タブ追加（ホーム/台帳/顧客 | + | 集計/設定）
-- [ ] 次: sales に clinic_id 紐付け（既存ユーザーのデータ移行含む）
+- [x] sales / master_items に clinic_id カラム追加（ALTER TABLE）
+- [x] 院作成時に既存データをバックフィル（UPDATE WHERE clinic_id IS NULL）
+- [x] addSale / addMaster: 新規レコードにclinic_idをセット
+- [ ] 次: visits テーブル（顧客と売上の紐付け）
 
 ## 次のフェーズ（Phase 5以降）
 - Phase 5: Stripe連携
