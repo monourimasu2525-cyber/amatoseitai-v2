@@ -33,12 +33,13 @@
 - [x] /onboarding → 3ステップチェックリスト・進捗バー・localStorageで進捗管理
 - [x] サインアップ後 → /onboarding へリダイレクト
 
-## Phase 3 完了（2026-06-27）
+## Phase 3 完了・動作確認済み（2026-06-27）
 - [x] initDb: DROP TABLE 廃止（本番データ消失リスク解消）
 - [x] レート制限: /api/login, /api/register → 15分20回
 - [x] パスワードリセット: Resend連携・/forgot-password・/reset-password
 - [x] localStorage → httpOnly Cookie（SameSite=none・credentials:include）
 - [x] /api/logout 追加
+- [x] 本番動作確認済み: auth_tokenがJSから読めないことを確認
 
 ## 次のフェーズ（Phase 4以降）
 - Phase 4: マルチテナント設計 + 顧客管理・分析機能
