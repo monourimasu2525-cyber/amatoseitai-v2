@@ -5,21 +5,23 @@ import { useRouter } from 'next/navigation'
 import { GET, POST, PUT, DEL } from '@/lib/api'
 
 interface Customer {
-  id: number; name: string; phone: string; birthday: string | null; memo: string; created_at: string
+  id: number; name: string; phone: string; birthday: string | null; memo: string; source_id: number | null; created_at: string
 }
 interface CustomerStat {
   visit_count: string; last_visit: string | null; total_amount: string | null
 }
 interface MasterItem { id: number; type: string; amount: number }
+interface Channel { id: number; name: string }
 
-const EMPTY_FORM = { name: '', phone: '', birthday: '', memo: '' }
-const EMPTY_VISIT = { type: '', amount: '' }
+const EMPTY_FORM = { name: '', phone: '', birthday: '', memo: '', source_id: '' }
+const EMPTY_VISIT = { type: '', amount: '', memo: '' }
 
 export default function CustomersPage() {
   const router = useRouter()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [stats, setStats] = useState<Record<number, CustomerStat>>({})
   const [master, setMaster] = useState<MasterItem[]>([])
+  const [channels, setChannels] = useState<Channel[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
 
@@ -40,14 +42,16 @@ export default function CustomersPage() {
 
   const load = useCallback(async (q = '') => {
     setLoading(true)
-    const [cd, sd, md] = await Promise.all([
+    const [cd, sd, md, chd] = await Promise.all([
       GET<{ customers: Customer[] }>('/api/customers', q ? { search: q } : {}),
       GET<{ stats: Record<number, CustomerStat> }>('/api/customers/stats'),
       GET<{ items: MasterItem[] }>('/api/getMaster'),
+      GET<{ channels: Channel[] }>('/api/advertising-channels'),
     ])
     setCustomers(cd.customers || [])
     setStats(sd.stats || {})
     setMaster(md.items || [])
+    setChannels(chd.channels || [])
     setLoading(false)
   }, [])
 
@@ -56,7 +60,7 @@ export default function CustomersPage() {
   function openAdd() { setEditing(null); setForm(EMPTY_FORM); setEditOpen(true) }
   function openEdit(c: Customer) {
     setEditing(c)
-    setForm({ name: c.name, phone: c.phone, birthday: c.birthday ? c.birthday.slice(0, 10) : '', memo: c.memo })
+    setForm({ name: c.name, phone: c.phone, birthday: c.birthday ? c.birthday.slice(0, 10) : '', memo: c.memo, source_id: c.source_id ? String(c.source_id) : '' })
     setEditOpen(true)
   }
   function openVisit(c: Customer) { setVisitTarget(c); setVisitForm(EMPTY_VISIT); setVisitOpen(true) }
@@ -64,8 +68,9 @@ export default function CustomersPage() {
   async function handleSave() {
     if (!form.name.trim()) { showToast('名前を入力してください'); return }
     setSaving(true)
-    if (editing) { await PUT('/api/customers/' + editing.id, form); showToast('更新しました') }
-    else { await POST('/api/customers', form); showToast('登録しました') }
+    const payload = { ...form, source_id: form.source_id ? parseInt(form.source_id) : null }
+    if (editing) { await PUT('/api/customers/' + editing.id, payload); showToast('更新しました') }
+    else { await POST('/api/customers', payload); showToast('登録しました') }
     setSaving(false); setEditOpen(false); load(search)
   }
 
@@ -78,7 +83,7 @@ export default function CustomersPage() {
     if (!visitForm.type) { showToast('種別を選択してください'); return }
     setVisitSaving(true)
     const d = await POST<{ success: boolean; message?: string }>('/api/visits', {
-      customer_id: visitTarget!.id, type: visitForm.type, amount: visitForm.amount
+      customer_id: visitTarget!.id, type: visitForm.type, amount: visitForm.amount, memo: visitForm.memo
     })
     setVisitSaving(false)
     if (d.success) { showToast('来院を記録しました'); setVisitOpen(false); load(search) }
@@ -148,7 +153,14 @@ export default function CustomersPage() {
                       {c.phone && <span style={{ fontSize: 12, color: 'var(--sub)' }}>📞 {c.phone}</span>}
                       {fmtBirthday(c.birthday) && <span style={{ fontSize: 12, color: 'var(--sub)' }}>🎂 {fmtBirthday(c.birthday)}</span>}
                     </div>
-                    {c.memo && <div style={{ fontSize: 12, color: 'var(--sub2)', marginTop: 4, background: 'var(--primary-l)', padding: '3px 8px', borderRadius: 6, display: 'inline-block' }}>{c.memo}</div>}
+                    <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' as const }}>
+                      {c.source_id && channels.find(ch => ch.id === c.source_id) && (
+                        <span style={{ fontSize: 11, color: 'var(--primary)', background: 'var(--primary-l)', padding: '2px 7px', borderRadius: 6, fontWeight: 700 }}>
+                          {channels.find(ch => ch.id === c.source_id)!.name}
+                        </span>
+                      )}
+                      {c.memo && <div style={{ fontSize: 12, color: 'var(--sub2)', background: 'var(--primary-l)', padding: '2px 7px', borderRadius: 6 }}>{c.memo.slice(0, 30)}{c.memo.length > 30 ? '…' : ''}</div>}
+                    </div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 8 }}>
                     {st && (
@@ -195,7 +207,7 @@ export default function CustomersPage() {
               ))}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
               <div>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--sub)', marginBottom: 5 }}>種別（手入力）</label>
                 <input type="text" value={visitForm.type} onChange={e => setVisitForm(p => ({ ...p, type: e.target.value }))} placeholder="新規・常連など"
@@ -206,6 +218,18 @@ export default function CustomersPage() {
                 <input type="number" value={visitForm.amount} onChange={e => setVisitForm(p => ({ ...p, amount: e.target.value }))} placeholder="0"
                   style={{ width: '100%', padding: '11px 13px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, outline: 'none', boxSizing: 'border-box' as const }} />
               </div>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--sub)', marginBottom: 5 }}>カルテ（任意）</label>
+              <textarea
+                value={visitForm.memo}
+                onChange={e => setVisitForm(p => ({ ...p, memo: e.target.value }))}
+                onFocus={e => { if (!e.target.value) setVisitForm(p => ({ ...p, memo: '【患者の訴え】\n\n【見立て・身体の状態】\n\n【施術内容】\n\n【施術後の説明・アドバイス】\n\n【次回に向けて】' })) }}
+                placeholder="カルテを記入（タップするとテンプレートが入ります）"
+                rows={8}
+                style={{ width: '100%', padding: '11px 13px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 13, outline: 'none', resize: 'none', boxSizing: 'border-box' as const, lineHeight: 1.6 }}
+              />
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>
@@ -239,6 +263,16 @@ export default function CustomersPage() {
                   style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 15, outline: 'none', background: '#fff', boxSizing: 'border-box' as const }} />
               </div>
             ))}
+            {channels.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--sub)', marginBottom: 6 }}>集客媒体</label>
+                <select value={form.source_id} onChange={e => setForm(p => ({ ...p, source_id: e.target.value }))}
+                  style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 15, outline: 'none', background: '#fff', boxSizing: 'border-box' as const }}>
+                  <option value="">選択してください</option>
+                  {channels.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
+                </select>
+              </div>
+            )}
             <div style={{ marginBottom: 24 }}>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--sub)', marginBottom: 6 }}>メモ</label>
               <textarea value={form.memo} onChange={e => setForm(p => ({ ...p, memo: e.target.value }))} placeholder="施術上の注意点など" rows={4}

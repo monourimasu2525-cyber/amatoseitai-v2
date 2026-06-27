@@ -105,6 +105,23 @@ async function initDb() {
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
     CREATE INDEX IF NOT EXISTS idx_visits_customer ON visits(customer_id, visited_at DESC);
+    ALTER TABLE clinics ADD COLUMN IF NOT EXISTS daily_capacity INTEGER DEFAULT 11;
+    CREATE TABLE IF NOT EXISTS advertising_channels (
+      id SERIAL PRIMARY KEY,
+      clinic_id INTEGER NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
+      name VARCHAR(50) NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS monthly_ad_spend (
+      id SERIAL PRIMARY KEY,
+      clinic_id INTEGER NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
+      channel_id INTEGER NOT NULL REFERENCES advertising_channels(id) ON DELETE CASCADE,
+      year INTEGER NOT NULL,
+      month INTEGER NOT NULL,
+      amount INTEGER NOT NULL DEFAULT 0,
+      UNIQUE(clinic_id, channel_id, year, month)
+    );
+    ALTER TABLE customers ADD COLUMN IF NOT EXISTS source_id INTEGER REFERENCES advertising_channels(id) ON DELETE SET NULL;
   `);
 }
 
@@ -262,11 +279,12 @@ app.post('/api/clinics', auth, async (req, res) => {
 // 院情報を更新
 app.put('/api/clinics/me', auth, async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, daily_capacity } = req.body;
     if (!name?.trim()) return res.json({ success: false, message: '院名を入力してください' });
+    const cap = daily_capacity ? parseInt(daily_capacity) : null;
     const r = await pool.query(
-      'UPDATE clinics SET name=$1 WHERE owner_user_id=$2 RETURNING *',
-      [name.trim(), req.userId]
+      'UPDATE clinics SET name=$1' + (cap ? ', daily_capacity=$3' : '') + ' WHERE owner_user_id=$2 RETURNING *',
+      cap ? [name.trim(), req.userId, cap] : [name.trim(), req.userId]
     );
     res.json({ success: true, clinic: r.rows[0] });
   } catch(e) { res.status(500).json({ success: false, message: e.message }); }
@@ -345,11 +363,11 @@ app.post('/api/customers', auth, async (req, res) => {
   try {
     const clinicId = await getClinicId(req.userId);
     if (!clinicId) return res.json({ success: false, message: '院が登録されていません' });
-    const { name, phone, birthday, memo } = req.body;
+    const { name, phone, birthday, memo, source_id } = req.body;
     if (!name?.trim()) return res.json({ success: false, message: '名前を入力してください' });
     const r = await pool.query(
-      'INSERT INTO customers (clinic_id, name, phone, birthday, memo) VALUES ($1,$2,$3,$4,$5) RETURNING *',
-      [clinicId, name.trim(), phone||'', birthday||null, memo||'']
+      'INSERT INTO customers (clinic_id, name, phone, birthday, memo, source_id) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
+      [clinicId, name.trim(), phone||'', birthday||null, memo||'', source_id||null]
     );
     res.json({ success: true, customer: r.rows[0] });
   } catch(e) { res.status(500).json({ success: false, message: e.message }); }
@@ -359,11 +377,11 @@ app.put('/api/customers/:id', auth, async (req, res) => {
   try {
     const clinicId = await getClinicId(req.userId);
     if (!clinicId) return res.json({ success: false, message: '院が登録されていません' });
-    const { name, phone, birthday, memo } = req.body;
+    const { name, phone, birthday, memo, source_id } = req.body;
     if (!name?.trim()) return res.json({ success: false, message: '名前を入力してください' });
     const r = await pool.query(
-      'UPDATE customers SET name=$1, phone=$2, birthday=$3, memo=$4 WHERE id=$5 AND clinic_id=$6 RETURNING *',
-      [name.trim(), phone||'', birthday||null, memo||'', req.params.id, clinicId]
+      'UPDATE customers SET name=$1, phone=$2, birthday=$3, memo=$4, source_id=$5 WHERE id=$6 AND clinic_id=$7 RETURNING *',
+      [name.trim(), phone||'', birthday||null, memo||'', source_id||null, req.params.id, clinicId]
     );
     if (!r.rows.length) return res.json({ success: false, message: '顧客が見つかりません' });
     res.json({ success: true, customer: r.rows[0] });
@@ -424,6 +442,21 @@ app.post('/api/visits', auth, async (req, res) => {
     } finally {
       client.release();
     }
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// カルテ更新
+app.put('/api/visits/:id', auth, async (req, res) => {
+  try {
+    const clinicId = await getClinicId(req.userId);
+    if (!clinicId) return res.json({ success: false, message: '院が登録されていません' });
+    const { memo } = req.body;
+    const r = await pool.query(
+      'UPDATE visits SET memo=$1 WHERE id=$2 AND clinic_id=$3 RETURNING *',
+      [memo||'', req.params.id, clinicId]
+    );
+    if (!r.rows.length) return res.json({ success: false, message: '来院記録が見つかりません' });
+    res.json({ success: true, visit: r.rows[0] });
   } catch(e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
@@ -539,6 +572,181 @@ app.get('/api/analytics/customers', auth, async (req, res) => {
       dormant: dormantR.rows,
       top_customers: topR.rows,
       monthly_new: monthlyR.rows,
+    });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// ===== 広告媒体マスターAPI =====
+app.get('/api/advertising-channels', auth, async (req, res) => {
+  try {
+    const clinicId = await getClinicId(req.userId);
+    if (!clinicId) return res.json({ success: true, channels: [] });
+    const r = await pool.query('SELECT * FROM advertising_channels WHERE clinic_id=$1 ORDER BY created_at', [clinicId]);
+    res.json({ success: true, channels: r.rows });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+app.post('/api/advertising-channels', auth, async (req, res) => {
+  try {
+    const clinicId = await getClinicId(req.userId);
+    if (!clinicId) return res.json({ success: false, message: '院が登録されていません' });
+    const { name } = req.body;
+    if (!name?.trim()) return res.json({ success: false, message: '媒体名を入力してください' });
+    const r = await pool.query(
+      'INSERT INTO advertising_channels (clinic_id, name) VALUES ($1,$2) RETURNING *',
+      [clinicId, name.trim()]
+    );
+    res.json({ success: true, channel: r.rows[0] });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+app.delete('/api/advertising-channels/:id', auth, async (req, res) => {
+  try {
+    const clinicId = await getClinicId(req.userId);
+    if (!clinicId) return res.json({ success: false, message: '院が登録されていません' });
+    await pool.query('DELETE FROM advertising_channels WHERE id=$1 AND clinic_id=$2', [req.params.id, clinicId]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// ===== 月次広告費API =====
+app.get('/api/monthly-ad-spend', auth, async (req, res) => {
+  try {
+    const clinicId = await getClinicId(req.userId);
+    if (!clinicId) return res.json({ success: true, spends: [] });
+    const { year, month } = req.query;
+    const r = await pool.query(
+      `SELECT m.*, c.name as channel_name FROM monthly_ad_spend m
+       JOIN advertising_channels c ON c.id = m.channel_id
+       WHERE m.clinic_id=$1 AND m.year=$2 AND m.month=$3`,
+      [clinicId, parseInt(year), parseInt(month)]
+    );
+    res.json({ success: true, spends: r.rows });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+app.put('/api/monthly-ad-spend', auth, async (req, res) => {
+  try {
+    const clinicId = await getClinicId(req.userId);
+    if (!clinicId) return res.json({ success: false, message: '院が登録されていません' });
+    const { channel_id, year, month, amount } = req.body;
+    await pool.query(
+      `INSERT INTO monthly_ad_spend (clinic_id, channel_id, year, month, amount)
+       VALUES ($1,$2,$3,$4,$5)
+       ON CONFLICT (clinic_id, channel_id, year, month) DO UPDATE SET amount=$5`,
+      [clinicId, channel_id, parseInt(year), parseInt(month), parseInt(amount)||0]
+    );
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// ===== 高度分析API =====
+app.get('/api/analytics/advanced', auth, async (req, res) => {
+  try {
+    const clinicId = await getClinicId(req.userId);
+    if (!clinicId) return res.json({ success: false, message: '院が登録されていません' });
+
+    const now = new Date(), j = toJST(now);
+    const year = parseInt(req.query.year) || j.getUTCFullYear();
+    const month = parseInt(req.query.month) || (j.getUTCMonth() + 1);
+    const { start, end } = jstRangeOfMonth(year, month);
+    const pm = month === 1 ? 12 : month - 1;
+    const py = month === 1 ? year - 1 : year;
+    const { start: prevStart, end: prevEnd } = jstRangeOfMonth(py, pm);
+
+    // 今月の来院数・稼働率
+    const visitR = await pool.query(
+      `SELECT COUNT(*) as count, COUNT(DISTINCT DATE(visited_at AT TIME ZONE 'Asia/Tokyo')) as active_days
+       FROM visits WHERE clinic_id=$1 AND visited_at>=$2 AND visited_at<$3`,
+      [clinicId, start, end]
+    );
+    const clinicR = await pool.query('SELECT daily_capacity FROM clinics WHERE id=$1', [clinicId]);
+    const capacity = clinicR.rows[0]?.daily_capacity || 11;
+    const activeDays = parseInt(visitR.rows[0].active_days) || 0;
+    const visitCount = parseInt(visitR.rows[0].count) || 0;
+    const utilization = activeDays > 0 ? Math.round(visitCount / (capacity * activeDays) * 100) : 0;
+
+    // 継続率（前月来院→今月来院）
+    const retentionR = await pool.query(
+      `SELECT
+        COUNT(DISTINCT prev.customer_id) as prev_count,
+        COUNT(DISTINCT curr.customer_id) as retained_count
+       FROM (SELECT DISTINCT customer_id FROM visits WHERE clinic_id=$1 AND visited_at>=$2 AND visited_at<$3) prev
+       LEFT JOIN (SELECT DISTINCT customer_id FROM visits WHERE clinic_id=$1 AND visited_at>=$4 AND visited_at<$5) curr
+         ON prev.customer_id = curr.customer_id`,
+      [clinicId, prevStart, prevEnd, start, end]
+    );
+    const prevCount = parseInt(retentionR.rows[0].prev_count) || 0;
+    const retainedCount = parseInt(retentionR.rows[0].retained_count) || 0;
+    const retention_rate = prevCount > 0 ? Math.round(retainedCount / prevCount * 100) : null;
+
+    // リピート率 2〜5回目（全期間の新規顧客コホート）
+    const repeatR = await pool.query(
+      `SELECT
+        COUNT(DISTINCT customer_id) as total,
+        COUNT(DISTINCT CASE WHEN visit_num >= 2 THEN customer_id END) as v2,
+        COUNT(DISTINCT CASE WHEN visit_num >= 3 THEN customer_id END) as v3,
+        COUNT(DISTINCT CASE WHEN visit_num >= 4 THEN customer_id END) as v4,
+        COUNT(DISTINCT CASE WHEN visit_num >= 5 THEN customer_id END) as v5
+       FROM (
+         SELECT customer_id, ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY visited_at) as visit_num
+         FROM visits WHERE clinic_id=$1
+       ) ranked`,
+      [clinicId]
+    );
+    const rep = repeatR.rows[0];
+    const repTotal = parseInt(rep.total) || 0;
+    const repeat_rates = repTotal > 0 ? {
+      v2: Math.round(parseInt(rep.v2) / repTotal * 100),
+      v3: Math.round(parseInt(rep.v3) / repTotal * 100),
+      v4: Math.round(parseInt(rep.v4) / repTotal * 100),
+      v5: Math.round(parseInt(rep.v5) / repTotal * 100),
+    } : null;
+
+    // 媒体別新規顧客数（今月登録）
+    const sourceR = await pool.query(
+      `SELECT ac.id as channel_id, ac.name as channel_name, COUNT(c.id)::int as count
+       FROM advertising_channels ac
+       LEFT JOIN customers c ON c.source_id = ac.id AND c.clinic_id = $1
+         AND c.created_at >= $2 AND c.created_at < $3
+       WHERE ac.clinic_id = $1
+       GROUP BY ac.id, ac.name ORDER BY ac.created_at`,
+      [clinicId, start, end]
+    );
+
+    // 媒体別CPA（今月）
+    const spendR = await pool.query(
+      `SELECT m.channel_id, m.amount, c.name as channel_name
+       FROM monthly_ad_spend m JOIN advertising_channels c ON c.id = m.channel_id
+       WHERE m.clinic_id=$1 AND m.year=$2 AND m.month=$3`,
+      [clinicId, year, month]
+    );
+    const cpaList = spendR.rows.map(s => {
+      const src = sourceR.rows.find(r => r.channel_id === s.channel_id);
+      const newCount = src?.count || 0;
+      return {
+        channel_id: s.channel_id,
+        channel_name: s.channel_name,
+        spend: s.amount,
+        new_customers: newCount,
+        cpa: newCount > 0 ? Math.round(s.amount / newCount) : null,
+      };
+    });
+
+    res.json({
+      success: true,
+      year, month,
+      visit_count: visitCount,
+      active_days: activeDays,
+      daily_capacity: capacity,
+      utilization_rate: utilization,
+      prev_month_visitors: prevCount,
+      retained_visitors: retainedCount,
+      retention_rate,
+      repeat_total: repTotal,
+      repeat_rates,
+      source_breakdown: sourceR.rows,
+      cpa_list: cpaList,
     });
   } catch(e) { res.status(500).json({ success: false, message: e.message }); }
 });
