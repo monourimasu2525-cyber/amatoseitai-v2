@@ -302,6 +302,67 @@ app.post('/api/reset-password', authLimiter, async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
+// ===== 顧客API =====
+async function getClinicId(userId) {
+  const r = await pool.query(
+    'SELECT clinic_id FROM memberships WHERE user_id=$1 AND status=$2 LIMIT 1',
+    [userId, 'active']
+  );
+  return r.rows[0]?.clinic_id || null;
+}
+
+app.get('/api/customers', auth, async (req, res) => {
+  try {
+    const clinicId = await getClinicId(req.userId);
+    if (!clinicId) return res.json({ success: true, customers: [] });
+    const { search } = req.query;
+    let q = 'SELECT * FROM customers WHERE clinic_id=$1';
+    const params = [clinicId];
+    if (search) { q += ' AND (name ILIKE $2 OR phone ILIKE $2)'; params.push(`%${search}%`); }
+    q += ' ORDER BY created_at DESC';
+    const r = await pool.query(q, params);
+    res.json({ success: true, customers: r.rows });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+app.post('/api/customers', auth, async (req, res) => {
+  try {
+    const clinicId = await getClinicId(req.userId);
+    if (!clinicId) return res.json({ success: false, message: '院が登録されていません' });
+    const { name, phone, birthday, memo } = req.body;
+    if (!name?.trim()) return res.json({ success: false, message: '名前を入力してください' });
+    const r = await pool.query(
+      'INSERT INTO customers (clinic_id, name, phone, birthday, memo) VALUES ($1,$2,$3,$4,$5) RETURNING *',
+      [clinicId, name.trim(), phone||'', birthday||null, memo||'']
+    );
+    res.json({ success: true, customer: r.rows[0] });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+app.put('/api/customers/:id', auth, async (req, res) => {
+  try {
+    const clinicId = await getClinicId(req.userId);
+    if (!clinicId) return res.json({ success: false, message: '院が登録されていません' });
+    const { name, phone, birthday, memo } = req.body;
+    if (!name?.trim()) return res.json({ success: false, message: '名前を入力してください' });
+    const r = await pool.query(
+      'UPDATE customers SET name=$1, phone=$2, birthday=$3, memo=$4 WHERE id=$5 AND clinic_id=$6 RETURNING *',
+      [name.trim(), phone||'', birthday||null, memo||'', req.params.id, clinicId]
+    );
+    if (!r.rows.length) return res.json({ success: false, message: '顧客が見つかりません' });
+    res.json({ success: true, customer: r.rows[0] });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+app.delete('/api/customers/:id', auth, async (req, res) => {
+  try {
+    const clinicId = await getClinicId(req.userId);
+    if (!clinicId) return res.json({ success: false, message: '院が登録されていません' });
+    await pool.query('DELETE FROM customers WHERE id=$1 AND clinic_id=$2', [req.params.id, clinicId]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
 // ===== データAPI（認証必須） =====
 app.get('/api/initData', auth, async (req, res) => {
   try {
