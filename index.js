@@ -4,27 +4,25 @@ const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15分
+  max: 20,                   // 最大20回
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'リクエストが多すぎます。しばらくしてから再試行してください。' },
+});
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 async function initDb() {
-  // user_id列がない旧テーブルは一度だけ作り直す（以降は何もしない）
-  const check = await pool.query(`
-    SELECT column_name FROM information_schema.columns
-    WHERE table_name='sales' AND column_name='user_id'
-  `);
-  if (check.rows.length === 0) {
-    await pool.query(`
-      DROP TABLE IF EXISTS sales CASCADE;
-      DROP TABLE IF EXISTS master_items CASCADE;
-    `);
-  }
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
@@ -123,7 +121,7 @@ async function getMonthStats(userId, year, month) {
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // ===== 認証API =====
-app.post('/api/register', async (req, res) => {
+app.post('/api/register', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) return res.json({ success: false, message: 'メールアドレスとパスワードは必須です' });
@@ -137,7 +135,7 @@ app.post('/api/register', async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) return res.json({ success: false, message: 'メールアドレスとパスワードを入力してください' });
