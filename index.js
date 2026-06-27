@@ -7,10 +7,17 @@ const multer = require('multer');
 const rateLimit = require('express-rate-limit');
 const { Resend } = require('resend');
 const crypto = require('crypto');
+const cookieParser = require('cookie-parser');
+
+const ALLOWED_ORIGINS = [
+  'https://amatoseitai-v2.vercel.app',
+  'http://localhost:3000',
+];
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15分
@@ -82,10 +89,18 @@ function jstRangeOfDay(year, month, day) {
 }
 
 // ===== 認証ミドルウェア =====
+const COOKIE_OPTS = {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'none',
+  maxAge: 30 * 24 * 60 * 60 * 1000,
+};
+
 function auth(req, res, next) {
-  const header = req.headers.authorization;
-  // GETでwindow.openを使うCSVダウンロード用にクエリパラメータも許可
-  const token = (header && header.startsWith('Bearer ') ? header.slice(7) : null) || req.query.token;
+  // Cookie優先、次にBearer（移行期間の後方互換）、最後にqueryパラメータ（CSV用）
+  const token = req.cookies?.auth_token
+    || (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : null)
+    || req.query.token;
   if (!token) return res.status(401).json({ success: false, message: '認証が必要です' });
   try {
     const payload = jwt.verify(token, JWT_SECRET);
@@ -143,7 +158,8 @@ app.post('/api/register', authLimiter, async (req, res) => {
     const hash = await bcrypt.hash(password, 10);
     const r = await pool.query('INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email', [email.toLowerCase(), hash]);
     const token = jwt.sign({ userId: r.rows[0].id }, JWT_SECRET, { expiresIn: '30d' });
-    res.json({ success: true, token, email: r.rows[0].email });
+    res.cookie('auth_token', token, COOKIE_OPTS);
+    res.json({ success: true, email: r.rows[0].email });
   } catch(e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
@@ -156,8 +172,14 @@ app.post('/api/login', authLimiter, async (req, res) => {
     const ok = await bcrypt.compare(password, r.rows[0].password_hash);
     if (!ok) return res.json({ success: false, message: 'メールアドレスまたはパスワードが違います' });
     const token = jwt.sign({ userId: r.rows[0].id }, JWT_SECRET, { expiresIn: '30d' });
-    res.json({ success: true, token, email: r.rows[0].email });
+    res.cookie('auth_token', token, COOKIE_OPTS);
+    res.json({ success: true, email: r.rows[0].email });
   } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+app.post('/api/logout', (req, res) => {
+  res.clearCookie('auth_token', { ...COOKIE_OPTS, maxAge: 0 });
+  res.json({ success: true });
 });
 
 // パスワードリセット申請

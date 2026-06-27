@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { GET, POST, PUT, DEL, getCsvUrl } from '@/lib/api'
 import { getEmail, clearAuth } from '@/lib/auth'
+
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://amatoseitai-v2-production.up.railway.app'
 import type { MasterItem } from '@/types'
 
 const fmt = (n: number) => '¥' + Number(n).toLocaleString()
@@ -97,7 +99,11 @@ export default function SettingsPage() {
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)' }}>{email}</div>
               <div style={{ fontSize: 12, color: 'var(--sub2)', marginTop: 2 }}>ログイン中</div>
             </div>
-            <button className="btn btn-d btn-sm" onClick={() => { clearAuth(); router.push('/login') }}>ログアウト</button>
+            <button className="btn btn-d btn-sm" onClick={async () => {
+              await fetch(`${API}/api/logout`, { method: 'POST', credentials: 'include' })
+              clearAuth()
+              router.push('/login')
+            }}>ログアウト</button>
           </div>
         </div>
 
