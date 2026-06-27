@@ -34,7 +34,7 @@ export default function SignupPage() {
       const data = await res.json()
       if (data.success) {
         setAuth(data.token, data.email)
-        router.push('/app/dashboard')
+        router.push('/onboarding')
       } else {
         setError(data.message)
       }
