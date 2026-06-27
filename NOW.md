@@ -41,7 +41,15 @@
 - [x] /api/logout 追加
 - [x] 本番動作確認済み: auth_tokenがJSから読めないことを確認
 
-## 次のフェーズ（Phase 4以降）
-- Phase 4: マルチテナント設計 + 顧客管理・分析機能
+## Phase 4 進行中（2026-06-27）
+- [x] clinics / memberships / customers テーブル追加
+- [x] /api/clinics/me, POST /api/clinics, PUT /api/clinics/me
+- [x] /app/clinic-setup 院登録ページ（初回ログイン時リダイレクト）
+- [x] 顧客管理ページ /app/customers（一覧・追加・編集・削除・検索）
+- [x] GET/POST/PUT/DELETE /api/customers
+- [x] ナビに顧客タブ追加（ホーム/台帳/顧客 | + | 集計/設定）
+- [ ] 次: sales に clinic_id 紐付け（既存ユーザーのデータ移行含む）
+
+## 次のフェーズ（Phase 5以降）
 - Phase 5: Stripe連携
 - 詳細は SPEC.md 参照
