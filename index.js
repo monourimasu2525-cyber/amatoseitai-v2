@@ -751,6 +751,74 @@ app.get('/api/analytics/advanced', auth, async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
+// 顧客CSVインポート
+app.post('/api/import/customers', auth, async (req, res) => {
+  try {
+    const clinicId = await getClinicId(req.userId);
+    if (!clinicId) return res.json({ success: false, message: '院が登録されていません' });
+    const { rows } = req.body;
+    if (!Array.isArray(rows) || rows.length === 0) return res.json({ success: false, message: 'データがありません' });
+    const chR = await pool.query('SELECT id, name FROM advertising_channels WHERE clinic_id=$1', [clinicId]);
+    const channelMap = {};
+    for (const ch of chR.rows) channelMap[ch.name] = ch.id;
+    let created = 0, skipped = 0;
+    const errors = [];
+    for (const row of rows) {
+      try {
+        const name = (row['名前'] || row['name'] || '').trim();
+        if (!name) { skipped++; continue; }
+        const phone = (row['電話番号'] || row['phone'] || '').trim();
+        const birthday = (row['生年月日'] || row['birthday'] || '').trim() || null;
+        const channelName = (row['集客媒体'] || row['channel'] || '').trim();
+        const memo = (row['メモ'] || row['memo'] || '').trim();
+        const dup = await pool.query('SELECT id FROM customers WHERE clinic_id=$1 AND name=$2 AND phone=$3', [clinicId, name, phone]);
+        if (dup.rows.length > 0) { skipped++; continue; }
+        const sourceId = channelName && channelMap[channelName] ? channelMap[channelName] : null;
+        await pool.query('INSERT INTO customers (clinic_id, name, phone, birthday, memo, source_id) VALUES ($1,$2,$3,$4,$5,$6)', [clinicId, name, phone, birthday, memo, sourceId]);
+        created++;
+      } catch(e) { errors.push(`${row['名前'] || '?'}: ${e.message}`); }
+    }
+    res.json({ success: true, created, skipped, errors });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// 来院履歴CSVインポート
+app.post('/api/import/visits', auth, async (req, res) => {
+  try {
+    const clinicId = await getClinicId(req.userId);
+    if (!clinicId) return res.json({ success: false, message: '院が登録されていません' });
+    const { rows } = req.body;
+    if (!Array.isArray(rows) || rows.length === 0) return res.json({ success: false, message: 'データがありません' });
+    const custR = await pool.query('SELECT id, name FROM customers WHERE clinic_id=$1', [clinicId]);
+    const customerMap = {};
+    for (const c of custR.rows) customerMap[c.name] = c.id;
+    let created = 0, skipped = 0;
+    const errors = [];
+    for (const row of rows) {
+      const customerName = (row['顧客名'] || row['customer_name'] || '').trim();
+      const visitedAt = (row['来院日'] || row['visited_at'] || '').trim();
+      const type = (row['種別'] || row['type'] || '').trim();
+      const amount = parseInt(row['金額'] || row['amount'] || '0') || 0;
+      const memo = (row['カルテ'] || row['memo'] || '').trim();
+      if (!customerName || !visitedAt || !type) { skipped++; continue; }
+      const customerId = customerMap[customerName];
+      if (!customerId) { errors.push(`「${customerName}」が見つかりません`); continue; }
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const sale = await client.query('INSERT INTO sales (user_id, clinic_id, type, amount) VALUES ($1,$2,$3,$4) RETURNING *', [req.userId, clinicId, type, amount]);
+        await client.query('INSERT INTO visits (clinic_id, customer_id, sale_id, memo, visited_at) VALUES ($1,$2,$3,$4,$5)', [clinicId, customerId, sale.rows[0].id, memo, new Date(visitedAt)]);
+        await client.query('COMMIT');
+        created++;
+      } catch(e) {
+        await client.query('ROLLBACK');
+        errors.push(`${customerName} ${visitedAt}: ${e.message}`);
+      } finally { client.release(); }
+    }
+    res.json({ success: true, created, skipped, errors });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
 // ===== データAPI（認証必須） =====
 app.get('/api/initData', auth, async (req, res) => {
   try {

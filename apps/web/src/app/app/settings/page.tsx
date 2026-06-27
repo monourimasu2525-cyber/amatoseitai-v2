@@ -30,6 +30,15 @@ export default function SettingsPage() {
   const [toastErr, setToastErr] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const importAreaRef = useRef<HTMLDivElement>(null)
+  const dataImportRef = useRef<HTMLInputElement>(null)
+
+  // データインポート
+  const [importTab, setImportTab] = useState<'customer' | 'visit'>('customer')
+  const [csvAllRows, setCsvAllRows] = useState<Record<string, string>[]>([])
+  const [csvPreview, setCsvPreview] = useState<Record<string, string>[]>([])
+  const [csvHeaders, setCsvHeaders] = useState<string[]>([])
+  const [csvImporting, setCsvImporting] = useState(false)
+  const [csvResult, setCsvResult] = useState<{ created: number; skipped: number; errors: string[] } | null>(null)
 
   // 院設定
   const [clinicName, setClinicName] = useState('')
@@ -83,6 +92,42 @@ export default function SettingsPage() {
     if (!name.trim()) { toast('媒体名を入力してください', true); return }
     const r = await POST('/api/advertising-channels', { name }) as { success: boolean; message?: string }
     if (r.success) { setNewChannel(''); loadChannels() } else { toast(r.message || 'エラー', true) }
+  }
+
+  function parseCSV(text: string) {
+    const lines = text.split(/\r?\n/).filter(l => l.trim())
+    if (lines.length < 2) return { headers: [] as string[], rows: [] as Record<string, string>[] }
+    const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''))
+    const rows = lines.slice(1).map(line => {
+      const vals = line.split(',').map(v => v.trim().replace(/^["']|["']$/g, ''))
+      const row: Record<string, string> = {}
+      headers.forEach((h, i) => { row[h] = vals[i] || '' })
+      return row
+    })
+    return { headers, rows }
+  }
+
+  function handleDataImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setCsvResult(null); setCsvPreview([]); setCsvAllRows([]); setCsvHeaders([])
+    const reader = new FileReader()
+    reader.onload = ev => {
+      const { headers, rows } = parseCSV(ev.target?.result as string)
+      setCsvHeaders(headers); setCsvPreview(rows.slice(0, 5)); setCsvAllRows(rows)
+    }
+    reader.readAsText(file, 'UTF-8')
+  }
+
+  async function runImport() {
+    if (!csvAllRows.length) return
+    setCsvImporting(true); setCsvResult(null)
+    const endpoint = importTab === 'customer' ? '/api/import/customers' : '/api/import/visits'
+    const r = await POST(endpoint, { rows: csvAllRows }) as { success: boolean; created: number; skipped: number; errors: string[] }
+    setCsvImporting(false)
+    setCsvResult({ created: r.created || 0, skipped: r.skipped || 0, errors: r.errors || [] })
+    setCsvAllRows([]); setCsvPreview([]); setCsvHeaders([])
+    if (dataImportRef.current) dataImportRef.current.value = ''
   }
 
   async function deleteChannel(id: number, name: string) {
@@ -216,6 +261,45 @@ export default function SettingsPage() {
         <div className="card cp gap">
           <div style={{ fontSize: 13, color: 'var(--sub)', marginBottom: 12 }}>月次レポートの確認・CSV出力ができます</div>
           <button className="btn btn-p btn-w" onClick={() => router.push('/app/accounting')}>経理レポートを開く</button>
+        </div>
+
+        <div className="stitle">データインポート</div>
+        <div className="card gap">
+          <div className="vtabs" style={{ margin: '12px 16px 0' }}>
+            <button className={`vtab ${importTab === 'customer' ? 'active' : ''}`} onClick={() => { setImportTab('customer'); setCsvPreview([]); setCsvAllRows([]); setCsvHeaders([]); setCsvResult(null) }}>顧客CSV</button>
+            <button className={`vtab ${importTab === 'visit' ? 'active' : ''}`} onClick={() => { setImportTab('visit'); setCsvPreview([]); setCsvAllRows([]); setCsvHeaders([]); setCsvResult(null) }}>来院CSV</button>
+          </div>
+          <div style={{ padding: '12px 16px' }}>
+            <div style={{ fontSize: 12, color: 'var(--sub2)', marginBottom: 8 }}>
+              {importTab === 'customer' ? (
+                <>1行目ヘッダー：<code style={{ background: '#f5f0eb', padding: '2px 6px', borderRadius: 4, fontSize: 11 }}>名前,電話番号,生年月日,集客媒体,メモ</code></>
+              ) : (
+                <>1行目ヘッダー：<code style={{ background: '#f5f0eb', padding: '2px 6px', borderRadius: 4, fontSize: 11 }}>顧客名,来院日,種別,金額,カルテ</code></>
+              )}
+            </div>
+            <input ref={dataImportRef} type="file" accept=".csv,text/csv" style={{ display: 'none' }} onChange={handleDataImportFile} />
+            <button className="btn btn-s btn-w" onClick={() => { setCsvPreview([]); setCsvAllRows([]); setCsvHeaders([]); setCsvResult(null); dataImportRef.current?.click() }}>CSVファイルを選択</button>
+            {csvPreview.length > 0 && (
+              <>
+                <div style={{ marginTop: 12, fontSize: 12, color: 'var(--sub2)' }}>プレビュー（先頭{csvPreview.length}件 / 全{csvAllRows.length}件）</div>
+                <div style={{ overflowX: 'auto', marginTop: 6 }}>
+                  <table className="tbl">
+                    <thead><tr>{csvHeaders.map(h => <th key={h}>{h}</th>)}</tr></thead>
+                    <tbody>{csvPreview.map((row, i) => <tr key={i}>{csvHeaders.map(h => <td key={h}>{row[h]}</td>)}</tr>)}</tbody>
+                  </table>
+                </div>
+                <button className="btn btn-p btn-w" style={{ marginTop: 12 }} onClick={runImport} disabled={csvImporting}>
+                  {csvImporting ? 'インポート中…' : `${csvAllRows.length}件をインポート`}
+                </button>
+              </>
+            )}
+            {csvResult && (
+              <div style={{ marginTop: 12, padding: 12, background: csvResult.errors.length > 0 ? '#FEF2F2' : '#F0FDF4', borderRadius: 8, fontSize: 13 }}>
+                <div style={{ fontWeight: 700 }}>登録: {csvResult.created}件　スキップ: {csvResult.skipped}件{csvResult.errors.length > 0 ? `　エラー: ${csvResult.errors.length}件` : ''}</div>
+                {csvResult.errors.slice(0, 5).map((e, i) => <div key={i} style={{ fontSize: 11, color: '#b91c1c', marginTop: 4 }}>{e}</div>)}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="stitle">CSVエクスポート</div>
