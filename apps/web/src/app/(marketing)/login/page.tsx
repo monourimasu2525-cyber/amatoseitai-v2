@@ -79,6 +79,10 @@ export default function LoginPage() {
           </button>
         </form>
 
+        <div style={{ textAlign: 'center', marginTop: 12 }}>
+          <Link href="/forgot-password" style={{ fontSize: 13, color: '#8B5A3A' }}>パスワードをお忘れの方</Link>
+        </div>
+
         <div className={styles.footer}>
           アカウントをお持ちでない方は{' '}
           <Link href="/signup" className={styles.link}>新規登録</Link>

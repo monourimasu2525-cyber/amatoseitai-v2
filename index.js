@@ -5,6 +5,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const rateLimit = require('express-rate-limit');
+const { Resend } = require('resend');
+const crypto = require('crypto');
 
 const app = express();
 app.use(cors());
@@ -21,6 +23,8 @@ const authLimiter = rateLimit({
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+const resend = new Resend(process.env.RESEND_API_KEY);
+const APP_URL = process.env.APP_URL || 'https://amatoseitai-v2.vercel.app';
 
 async function initDb() {
   await pool.query(`
@@ -49,6 +53,14 @@ async function initDb() {
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
     CREATE INDEX IF NOT EXISTS idx_sales_user_created ON sales(user_id, created_at);
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token VARCHAR(64) UNIQUE NOT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
+      used BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
   `);
 }
 
@@ -145,6 +157,52 @@ app.post('/api/login', authLimiter, async (req, res) => {
     if (!ok) return res.json({ success: false, message: 'メールアドレスまたはパスワードが違います' });
     const token = jwt.sign({ userId: r.rows[0].id }, JWT_SECRET, { expiresIn: '30d' });
     res.json({ success: true, token, email: r.rows[0].email });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// パスワードリセット申請
+app.post('/api/forgot-password', authLimiter, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.json({ success: true }); // 存在有無を漏らさない
+    const r = await pool.query('SELECT id FROM users WHERE email=$1', [email.toLowerCase()]);
+    if (r.rows.length) {
+      const token = crypto.randomBytes(32).toString('hex');
+      const expires = new Date(Date.now() + 60 * 60 * 1000); // 1時間
+      await pool.query('DELETE FROM password_reset_tokens WHERE user_id=$1', [r.rows[0].id]);
+      await pool.query('INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1,$2,$3)', [r.rows[0].id, token, expires]);
+      const resetUrl = `${APP_URL}/reset-password?token=${token}`;
+      await resend.emails.send({
+        from: 'Amato整体院SaaS <noreply@resend.dev>',
+        to: email.toLowerCase(),
+        subject: 'パスワードリセットのご案内',
+        html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
+          <h2 style="color:#3D2314">パスワードリセット</h2>
+          <p>以下のボタンからパスワードをリセットしてください。リンクは1時間有効です。</p>
+          <a href="${resetUrl}" style="display:inline-block;background:#C4622D;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0">パスワードをリセットする</a>
+          <p style="color:#888;font-size:13px">このメールに心当たりがない場合は無視してください。</p>
+        </div>`,
+      });
+    }
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// パスワードリセット実行
+app.post('/api/reset-password', authLimiter, async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) return res.json({ success: false, message: '無効なリクエストです' });
+    if (password.length < 6) return res.json({ success: false, message: 'パスワードは6文字以上にしてください' });
+    const r = await pool.query(
+      'SELECT * FROM password_reset_tokens WHERE token=$1 AND used=FALSE AND expires_at > NOW()',
+      [token]
+    );
+    if (!r.rows.length) return res.json({ success: false, message: 'リンクが無効または期限切れです' });
+    const hash = await bcrypt.hash(password, 10);
+    await pool.query('UPDATE users SET password_hash=$1 WHERE id=$2', [hash, r.rows[0].user_id]);
+    await pool.query('UPDATE password_reset_tokens SET used=TRUE WHERE id=$1', [r.rows[0].id]);
+    res.json({ success: true });
   } catch(e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
