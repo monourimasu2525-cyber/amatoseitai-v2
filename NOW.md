@@ -1,22 +1,31 @@
 # 現在の作業状況
 
-## 直近の作業（2026-06-24）
-- Next.js（Vercel）移行を試みたが失敗 → 元のバニラJS構成に戻した
-- 失敗原因: VercelのDATABASE_URLにRailway内部URL（postgres.railway.internal）が設定されていた
-- git reset --hard で 21e4974 に戻してforce push済み
+## 方針決定（2026-06-27）
 
-## 現在の構成（元に戻った）
-- index.html → GitHub Pages（フロント）
-- index.js → Railway Express（バックエンド）
-- DB → Railway PostgreSQL（変わらず）
+LP一体型SaaSへの移行を開始する。詳細は `SPEC.md` 参照。
 
-## 次回やること
-- Vercel移行の再挑戦
-  - VercelのDATABASE_URLにはRailwayの「DATABASE_PUBLIC_URL」の値を使う（内部URLは不可）
-  - Tailwindを外してシンプルなCSS構成にする（レイアウト崩れ対策）
-  - JWT_SECRET: 生成済み（0332ce123b7ca05dfe7772c4525d529d0a1db40b6597f8e41d6ff46083b32798）
+**決定事項:**
+- 技術スタック: Next.js 14+ App Router + TypeScript + Vercel
+- フロントだけ先に移行（Railway APIはPhase 1で変更なし）
+- 顧客管理・分析機能を追加（マルチテナント設計から）
+- `apps/web/` ディレクトリにNext.jsプロジェクトを作成
+- Vercelの「Root Directory」を `apps/web` に設定
 
-## 将来の方針
-- 50院向けSaaSとして提供予定
-- Stripe連携（月額課金）を追加する
-- GitHubのPrivateリポジトリ化またはVercel移行でコード保護
+## 次やること（Phase 1開始）
+
+1. `apps/web/` に Next.js プロジェクト作成
+   - `npx create-next-app@latest apps/web --typescript --app --no-tailwind --no-eslint`
+   - CSS Modulesで実装（Tailwindは使わない）
+2. デザイントークン定義（SPEC.mdのカラー変数をCSS変数として）
+3. 認証ページ（/login, /signup）
+4. アプリ画面を1枚ずつ移植
+   - /app/dashboard（ホーム）
+   - /app/ledger（台帳）
+   - /app/analytics（集計）
+   - /app/settings（設定）
+5. LP（/）は後回し
+
+## 作業ログ
+
+- 2026-06-24: Next.js(Vercel)移行を試みたが失敗→元に戻した（原因: DATABASE_URLがRailway内部URLだった）
+- 2026-06-27: SaaS移行方針確定。SPEC.md作成。Phase 1開始準備完了

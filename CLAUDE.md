@@ -1,11 +1,16 @@
 # amatoseitai-v2
 
-あまと整体院の売上管理Webアプリ。スマホ操作前提。
+あまと整体院の売上管理Webアプリ。現在LP一体型SaaSへ移行中。
+
+## 必読
+
+**セッション開始時は必ず `SPEC.md` を読むこと。** 全機能・API・DB・移行計画・フェーズが記載されている。
 
 ## 構成
 
-- `index.html` — フロントエンド全体（バニラJS + Chart.js 4.4）
-- `index.js` — Express APIサーバー（Railway上で動作）
+- `index.html` — フロントエンド（移行後廃止予定）
+- `index.js` — Express APIサーバー（Railway上で動作・Phase 1は変更なし）
+- `apps/web/` — Next.js フロント（Vercelデプロイ・移行先）
 - DB: Railway PostgreSQL（`DATABASE_URL`環境変数）
 
 ## デプロイ
