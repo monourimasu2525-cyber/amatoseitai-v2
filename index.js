@@ -458,7 +458,7 @@ app.get('/api/customers/stats', auth, async (req, res) => {
        GROUP BY customer_id`,
       [clinicId]
     );
-    const stats: Record<string, unknown> = {};
+    const stats = {};
     r.rows.forEach(row => { stats[row.customer_id] = row; });
     res.json({ success: true, stats });
   } catch(e) { res.status(500).json({ success: false, message: e.message }); }
