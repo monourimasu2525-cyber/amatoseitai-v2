@@ -218,33 +218,35 @@ export default function CustomersPage() {
         </div>
       )}
 
-      {/* 顧客追加・編集モーダル */}
+      {/* 顧客追加・編集（フルスクリーン） */}
       {editOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div style={{ background: '#fff', borderRadius: '20px 20px 0 0', padding: '24px 20px', width: '100%', maxWidth: 540, maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ fontSize: 17, fontWeight: 900, color: 'var(--primary)', marginBottom: 20 }}>{editing ? '顧客を編集' : '顧客を追加'}</div>
+        <div style={{ position: 'fixed', inset: 0, background: 'var(--bg)', zIndex: 100, overflowY: 'auto', fontFamily: "-apple-system, 'Hiragino Kaku Gothic ProN', sans-serif" }}>
+          <div style={{ background: 'var(--primary)', padding: '16px 16px 20px' }}>
+            <button onClick={() => setEditOpen(false)} style={{ background: 'rgba(255,255,255,.2)', border: 'none', borderRadius: 8, padding: '6px 12px', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', marginBottom: 12 }}>
+              ← 戻る
+            </button>
+            <div style={{ color: '#fff', fontSize: 18, fontWeight: 900 }}>{editing ? '顧客を編集' : '顧客を追加'}</div>
+          </div>
+          <div style={{ padding: '20px 16px 40px' }}>
             {([
               { label: '名前 *', key: 'name', type: 'text', placeholder: '山田 太郎' },
               { label: '電話番号', key: 'phone', type: 'tel', placeholder: '090-0000-0000' },
               { label: '生年月日', key: 'birthday', type: 'date', placeholder: '' },
             ] as const).map(f => (
-              <div key={f.key} style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--sub)', marginBottom: 5 }}>{f.label}</label>
+              <div key={f.key} style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--sub)', marginBottom: 6 }}>{f.label}</label>
                 <input type={f.type} value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} placeholder={f.placeholder}
-                  style={{ width: '100%', padding: '11px 13px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 15, outline: 'none', boxSizing: 'border-box' as const }} />
+                  style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 15, outline: 'none', background: '#fff', boxSizing: 'border-box' as const }} />
               </div>
             ))}
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--sub)', marginBottom: 5 }}>メモ</label>
-              <textarea value={form.memo} onChange={e => setForm(p => ({ ...p, memo: e.target.value }))} placeholder="施術上の注意点など" rows={3}
-                style={{ width: '100%', padding: '11px 13px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, outline: 'none', resize: 'none', boxSizing: 'border-box' as const }} />
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--sub)', marginBottom: 6 }}>メモ</label>
+              <textarea value={form.memo} onChange={e => setForm(p => ({ ...p, memo: e.target.value }))} placeholder="施術上の注意点など" rows={4}
+                style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 14, outline: 'none', resize: 'none', background: '#fff', boxSizing: 'border-box' as const }} />
             </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setEditOpen(false)} style={{ flex: 1, background: 'var(--primary-l)', color: 'var(--primary)', border: 'none', borderRadius: 12, padding: 13, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>キャンセル</button>
-              <button onClick={handleSave} disabled={saving} style={{ flex: 2, background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: 12, padding: 13, fontSize: 15, fontWeight: 800, cursor: 'pointer', opacity: saving ? .6 : 1 }}>
-                {saving ? '保存中...' : (editing ? '更新する' : '登録する')}
-              </button>
-            </div>
+            <button onClick={handleSave} disabled={saving} style={{ width: '100%', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: 14, padding: 15, fontSize: 16, fontWeight: 800, cursor: 'pointer', opacity: saving ? .6 : 1 }}>
+              {saving ? '保存中...' : (editing ? '更新する' : '登録する')}
+            </button>
           </div>
         </div>
       )}
