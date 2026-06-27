@@ -93,6 +93,8 @@ async function initDb() {
       memo TEXT DEFAULT '',
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
+    ALTER TABLE sales ADD COLUMN IF NOT EXISTS clinic_id INTEGER REFERENCES clinics(id) ON DELETE SET NULL;
+    ALTER TABLE master_items ADD COLUMN IF NOT EXISTS clinic_id INTEGER REFERENCES clinics(id) ON DELETE SET NULL;
   `);
 }
 
@@ -235,10 +237,14 @@ app.post('/api/clinics', auth, async (req, res) => {
       'INSERT INTO clinics (name, slug, owner_user_id) VALUES ($1,$2,$3) RETURNING *',
       [name.trim(), slug, req.userId]
     );
+    const clinicId = clinic.rows[0].id;
     await pool.query(
       'INSERT INTO memberships (clinic_id, user_id, role, status) VALUES ($1,$2,$3,$4)',
-      [clinic.rows[0].id, req.userId, 'owner', 'active']
+      [clinicId, req.userId, 'owner', 'active']
     );
+    // 既存の売上・マスタデータにclinic_idを紐付け
+    await pool.query('UPDATE sales SET clinic_id=$1 WHERE user_id=$2 AND clinic_id IS NULL', [clinicId, req.userId]);
+    await pool.query('UPDATE master_items SET clinic_id=$1 WHERE user_id=$2 AND clinic_id IS NULL', [clinicId, req.userId]);
     res.json({ success: true, clinic: clinic.rows[0] });
   } catch(e) { res.status(500).json({ success: false, message: e.message }); }
 });
@@ -476,9 +482,10 @@ app.post('/api/addSale', auth, async (req, res) => {
   try {
     const { type, amount } = req.body;
     if (!type) return res.json({ success:false, message:'種別は必須です' });
+    const clinicId = await getClinicId(req.userId);
     const r = await pool.query(
-      `INSERT INTO sales (user_id, type, amount) VALUES ($1, $2, $3) RETURNING *`,
-      [req.userId, type, parseInt(amount)]
+      `INSERT INTO sales (user_id, clinic_id, type, amount) VALUES ($1, $2, $3, $4) RETURNING *`,
+      [req.userId, clinicId, type, parseInt(amount)]
     );
     const row = r.rows[0];
     res.json({ success:true, message:`${type} ¥${amount} を登録しました`, record:{ id:row.id, date:fmtDate(row.created_at), time:fmtTime(row.created_at), type:row.type, amount:row.amount } });
@@ -504,9 +511,10 @@ app.delete('/api/deleteSale/:id', auth, async (req, res) => {
 app.post('/api/addMaster', auth, async (req, res) => {
   try {
     const { type, amount, description='' } = req.body;
+    const clinicId = await getClinicId(req.userId);
     const r = await pool.query(
-      `INSERT INTO master_items (user_id, type, amount, description) VALUES ($1, $2, $3, $4) RETURNING *`,
-      [req.userId, type, parseInt(amount), description]
+      `INSERT INTO master_items (user_id, clinic_id, type, amount, description) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [req.userId, clinicId, type, parseInt(amount), description]
     );
     res.json({ success:true, message:'マスタを追加しました', item: r.rows[0] });
   } catch(e) { res.status(500).json({ success:false, message:e.message }); }
