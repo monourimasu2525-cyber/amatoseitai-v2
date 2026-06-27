@@ -1,31 +1,34 @@
 # 現在の作業状況
 
-## 方針決定（2026-06-27）
+## Phase 1 完了（2026-06-27）
 
-LP一体型SaaSへの移行を開始する。詳細は `SPEC.md` 参照。
+### 完了済み
+- [x] `apps/web/` に Next.js 16 + TypeScript プロジェクト作成
+- [x] globals.css（デザイントークン + 共通スタイル）
+- [x] src/types/index.ts（型定義）
+- [x] src/lib/auth.ts（認証ユーティリティ）
+- [x] src/lib/api.ts（APIクライアント）
+- [x] /login → ログインページ（Railway API接続済み）
+- [x] /signup → 新規登録ページ
+- [x] /app/layout.tsx → 下部ナビ + 認証ガード
+- [x] /app/dashboard → ホーム（今日の売上・クイック入力・グラフ・今日の記録・編集削除）
+- [x] /app/ledger → 台帳（年別/月別/日別、月ピッカー、編集削除）
+- [x] /app/analytics → 集計（年別/月別/日別、Chart.js グラフ、KPI、3ヶ月比較）
+- [x] /app/settings → 設定（アカウント・マスタCRUD・CSV出力/インポート）
+- [x] /app/accounting → 経理レポート（月次レポート・日別明細・印刷/PDF・CSV）
+- [x] ビルド成功（全9ルート・型エラーなし）
 
-**決定事項:**
-- 技術スタック: Next.js 14+ App Router + TypeScript + Vercel
-- フロントだけ先に移行（Railway APIはPhase 1で変更なし）
-- 顧客管理・分析機能を追加（マルチテナント設計から）
-- `apps/web/` ディレクトリにNext.jsプロジェクトを作成
-- Vercelの「Root Directory」を `apps/web` に設定
+### 次にやること
+1. Vercel デプロイ設定
+   - Root Directory: `apps/web`
+   - 環境変数: `NEXT_PUBLIC_API_URL=https://amatoseitai-v2-production.up.railway.app`
+   - git push するだけで自動デプロイ
 
-## 次やること（Phase 1開始）
+## 構成
+- Railway: index.js（変更なし）
+- Vercel: apps/web/ → Root Directory を apps/web に設定
+- 環境変数: NEXT_PUBLIC_API_URL=https://amatoseitai-v2-production.up.railway.app
 
-1. `apps/web/` に Next.js プロジェクト作成
-   - `npx create-next-app@latest apps/web --typescript --app --no-tailwind --no-eslint`
-   - CSS Modulesで実装（Tailwindは使わない）
-2. デザイントークン定義（SPEC.mdのカラー変数をCSS変数として）
-3. 認証ページ（/login, /signup）
-4. アプリ画面を1枚ずつ移植
-   - /app/dashboard（ホーム）
-   - /app/ledger（台帳）
-   - /app/analytics（集計）
-   - /app/settings（設定）
-5. LP（/）は後回し
-
-## 作業ログ
-
-- 2026-06-24: Next.js(Vercel)移行を試みたが失敗→元に戻した（原因: DATABASE_URLがRailway内部URLだった）
-- 2026-06-27: SaaS移行方針確定。SPEC.md作成。Phase 1開始準備完了
+## 将来の方針
+- 顧客管理・分析はPhase 4で追加（マルチテナント設計から）
+- 詳細は SPEC.md 参照
