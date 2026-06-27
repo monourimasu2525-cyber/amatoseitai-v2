@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import { GET } from '@/lib/api'
 import type { MonthStats } from '@/types'
 import { Chart, registerables } from 'chart.js'
@@ -12,18 +11,10 @@ const fmt = (n: number) => '¥' + Number(n).toLocaleString()
 const fmtS = (n: number) => n >= 10000 ? (n / 10000).toFixed(1).replace('.0', '') + '万' : '¥' + Number(n).toLocaleString()
 
 interface DayBreakdown { day: number; total: number; shinki: number; joren: number; other: number; count: number }
-interface CustomerAnalytics {
-  total_customers: number; repeat_customers: number; repeat_rate: number
-  churn_count: number; churn_rate: number; avg_visits: number; avg_ltv: number
-  dormant: { id: number; name: string; phone: string; last_visit: string | null; days_since: number | null; visit_count: number }[]
-  top_customers: { id: number; name: string; visit_count: number; total_amount: number }[]
-  monthly_new: { month: string; count: number }[]
-}
 
 export default function AnalyticsPage() {
-  const router = useRouter()
   const now = new Date()
-  const [view, setView] = useState<'year' | 'month' | 'day' | 'customer'>('month')
+  const [view, setView] = useState<'year' | 'month' | 'day'>('month')
   const [statsYear, setStatsYear] = useState(now.getFullYear())
   const [statsMonth, setStatsMonth] = useState(now.getMonth() + 1)
   const [dayYear, setDayYear] = useState(now.getFullYear())
@@ -36,9 +27,6 @@ export default function AnalyticsPage() {
   const [monthPrev, setMonthPrev] = useState<MonthStats | null>(null)
   const [monthDays, setMonthDays] = useState<DayBreakdown[]>([])
   const [dayDays, setDayDays] = useState<DayBreakdown[]>([])
-
-  const [customerData, setCustomerData] = useState<CustomerAnalytics | null>(null)
-  const [customerLoading, setCustomerLoading] = useState(false)
 
   // 月ピッカー
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -81,14 +69,6 @@ export default function AnalyticsPage() {
   useEffect(() => { if (view === 'year') loadYear() }, [view, loadYear])
   useEffect(() => { if (view === 'month') loadMonth() }, [view, loadMonth])
   useEffect(() => { if (view === 'day') loadDay() }, [view, loadDay])
-  useEffect(() => {
-    if (view !== 'customer' || customerLoading) return
-    setCustomerLoading(true)
-    GET<CustomerAnalytics & { success: boolean }>('/api/analytics/customers').then(d => {
-      if (d.success) setCustomerData(d)
-      setCustomerLoading(false)
-    }).catch(() => setCustomerLoading(false))
-  }, [view]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 年別チャート
   useEffect(() => {
@@ -214,8 +194,8 @@ export default function AnalyticsPage() {
       <div className="ph"><h1>集計</h1></div>
       <div className="wrap">
         <div className="vtabs">
-          {(['year', 'month', 'day', 'customer'] as const).map((v, i) => (
-            <button key={v} className={`vtab ${view === v ? 'active' : ''}`} onClick={() => setView(v)}>{['年別', '月別', '日別', '顧客'][i]}</button>
+          {(['year', 'month', 'day'] as const).map((v, i) => (
+            <button key={v} className={`vtab ${view === v ? 'active' : ''}`} onClick={() => setView(v)}>{['年別', '月別', '日別'][i]}</button>
           ))}
         </div>
 
@@ -321,104 +301,6 @@ export default function AnalyticsPage() {
           </>
         )}
       </div>
-
-        {/* 顧客分析 */}
-        {view === 'customer' && (
-          <>
-            {customerLoading && <div style={{ textAlign: 'center', padding: 40, color: 'var(--sub2)' }}>読み込み中...</div>}
-            {!customerLoading && customerData && (
-              <>
-                {/* KPI */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, margin: '10px 16px' }}>
-                  {[
-                    { label: 'リピート率', value: `${customerData.repeat_rate}%`, sub: `${customerData.repeat_customers}人が2回以上来院` },
-                    { label: '平均LTV', value: fmt(customerData.avg_ltv), sub: '顧客1人あたりの累計売上' },
-                    { label: '平均来院回数', value: `${customerData.avg_visits}回`, sub: '顧客1人あたり' },
-                    { label: '離脱率', value: `${customerData.churn_rate}%`, sub: '60日以上来院なし', neg: true },
-                  ].map(k => (
-                    <div key={k.label} className="kc">
-                      <div className="lbl">{k.label}</div>
-                      <div className="val" style={k.neg ? { color: 'var(--neg)' } : {}}>{k.value}</div>
-                      <div className="sub">{k.sub}</div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* 累計売上ランキング */}
-                <div className="card gap">
-                  <div style={{ padding: '16px 16px 0' }}><div className="stitle">累計売上ランキング</div></div>
-                  {customerData.top_customers.length === 0 ? (
-                    <div style={{ padding: 18, textAlign: 'center', color: 'var(--sub2)' }}>来院記録がありません</div>
-                  ) : (
-                    <table className="tbl">
-                      <thead><tr><th>顧客名</th><th className="r">来院回数</th><th className="r">累計売上</th></tr></thead>
-                      <tbody>
-                        {customerData.top_customers.map((c, i) => (
-                          <tr key={c.id} onClick={() => router.push('/app/customers/' + c.id)} style={{ cursor: 'pointer' }}>
-                            <td style={{ fontWeight: 700 }}>
-                              <span style={{ color: 'var(--sub2)', fontSize: 11, marginRight: 6 }}>#{i + 1}</span>{c.name}
-                            </td>
-                            <td className="r" style={{ color: 'var(--sub)' }}>{c.visit_count}回</td>
-                            <td className="num">{fmt(Number(c.total_amount))}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-
-                {/* 要フォロー顧客 */}
-                <div className="card gap">
-                  <div style={{ padding: '16px 16px 8px' }}>
-                    <div className="stitle">要フォロー顧客（60日以上来院なし）</div>
-                  </div>
-                  {customerData.dormant.length === 0 ? (
-                    <div style={{ padding: 18, textAlign: 'center', color: 'var(--sub2)' }}>休眠顧客はいません 🎉</div>
-                  ) : (
-                    <div style={{ padding: '0 16px 8px' }}>
-                      {customerData.dormant.map((d, idx) => (
-                        <div key={d.id} onClick={() => router.push('/app/customers/' + d.id)}
-                          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: idx < customerData.dormant.length - 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer' }}>
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--primary)' }}>{d.name}</div>
-                            {d.phone && <div style={{ fontSize: 12, color: 'var(--sub2)' }}>{d.phone}</div>}
-                          </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--neg)' }}>
-                              {d.last_visit ? `${d.days_since}日前` : '来院記録なし'}
-                            </div>
-                            <div style={{ fontSize: 11, color: 'var(--sub2)' }}>{d.visit_count}回来院</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* 月別新規顧客 */}
-                <div className="card gap">
-                  <div style={{ padding: '16px 16px 12px' }}><div className="stitle">月別新規顧客数</div></div>
-                  <div style={{ padding: '0 16px 16px' }}>
-                    {customerData.monthly_new.length === 0 ? (
-                      <div style={{ textAlign: 'center', color: 'var(--sub2)', padding: 12 }}>データがありません</div>
-                    ) : (() => {
-                      const maxCount = Math.max(...customerData.monthly_new.map(x => Number(x.count)), 1)
-                      return customerData.monthly_new.map(m => (
-                        <div key={m.month} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                          <div style={{ width: 36, fontSize: 12, color: 'var(--sub)', flexShrink: 0, textAlign: 'right' }}>{m.month.slice(5)}月</div>
-                          <div style={{ flex: 1, background: 'var(--border)', borderRadius: 4, height: 18 }}>
-                            <div style={{ width: `${(Number(m.count) / maxCount) * 100}%`, background: '#C4622D', borderRadius: 4, height: '100%', minWidth: 4 }} />
-                          </div>
-                          <div style={{ width: 28, fontSize: 13, fontWeight: 700, color: 'var(--primary)', textAlign: 'right', flexShrink: 0 }}>{m.count}</div>
-                        </div>
-                      ))
-                    })()}
-                  </div>
-                </div>
-              </>
-            )}
-          </>
-        )}
 
       {pickerOpen && (
         <div className="modal" onClick={() => setPickerOpen(false)}>

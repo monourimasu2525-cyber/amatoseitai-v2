@@ -51,6 +51,17 @@ const NAV_ITEMS = [
     ),
   },
   {
+    href: '/app/analysis',
+    label: '分析',
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="M21 21l-4.35-4.35"/>
+        <path d="M11 8v6M8 11h6"/>
+      </svg>
+    ),
+  },
+  {
     href: '/app/settings',
     label: '設定',
     icon: (
