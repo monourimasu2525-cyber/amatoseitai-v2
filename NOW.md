@@ -51,7 +51,18 @@
 - [x] sales / master_items に clinic_id カラム追加（ALTER TABLE）
 - [x] 院作成時に既存データをバックフィル（UPDATE WHERE clinic_id IS NULL）
 - [x] addSale / addMaster: 新規レコードにclinic_idをセット
-- [ ] 次: visits テーブル（顧客と売上の紐付け）
+- [x] visits テーブル追加（clinic_id/customer_id/sale_id）
+- [x] GET/POST/DELETE /api/visits・GET /api/customers/stats
+- [x] 来院登録モーダル（マスタ選択＋手入力）
+- [x] /app/customers/[id] 顧客詳細ページ（来院履歴・累計売上）
+
+## Phase 4 完了（2026-06-27）
+- マルチテナント基盤（clinics/memberships）
+- 顧客管理（customers）
+- 来院管理（visits）
+
+## 次のフェーズ（Phase 5以降）
+- Phase 5: Stripe連携（料金プラン・決済）
 
 ## 次のフェーズ（Phase 5以降）
 - Phase 5: Stripe連携
