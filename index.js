@@ -733,6 +733,27 @@ app.get('/api/analytics/advanced', auth, async (req, res) => {
       };
     });
 
+    // 年間LTV = 直近12ヶ月の総売上 ÷ 直近12ヶ月の新規顧客数
+    const ltvRevenueR = await pool.query(
+      `SELECT COALESCE(SUM(s.amount), 0) as revenue FROM visits v JOIN sales s ON s.id = v.sale_id WHERE v.clinic_id=$1 AND v.visited_at >= NOW() - INTERVAL '12 months'`,
+      [clinicId]
+    );
+    const ltvNewR = await pool.query(
+      `SELECT COUNT(*) as cnt FROM (SELECT customer_id, MIN(visited_at) as first_visit FROM visits WHERE clinic_id=$1 GROUP BY customer_id) sub WHERE first_visit >= NOW() - INTERVAL '12 months'`,
+      [clinicId]
+    );
+    const ltvRevenue = parseInt(ltvRevenueR.rows[0].revenue) || 0;
+    const ltvNewCount = parseInt(ltvNewR.rows[0].cnt) || 0;
+    const annual_ltv = ltvNewCount > 0 ? Math.round(ltvRevenue / ltvNewCount) : null;
+
+    // 月別来院数（過去12ヶ月）
+    const monthlyVisitsR = await pool.query(
+      `SELECT TO_CHAR(visited_at AT TIME ZONE 'Asia/Tokyo', 'YYYY-MM') as month, COUNT(*)::int as count
+       FROM visits WHERE clinic_id=$1 AND visited_at >= NOW() - INTERVAL '12 months'
+       GROUP BY 1 ORDER BY 1`,
+      [clinicId]
+    );
+
     res.json({
       success: true,
       year, month,
@@ -747,6 +768,8 @@ app.get('/api/analytics/advanced', auth, async (req, res) => {
       repeat_rates,
       source_breakdown: sourceR.rows,
       cpa_list: cpaList,
+      annual_ltv,
+      monthly_visits: monthlyVisitsR.rows,
     });
   } catch(e) { res.status(500).json({ success: false, message: e.message }); }
 });
