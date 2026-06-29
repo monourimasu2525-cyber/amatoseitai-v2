@@ -916,10 +916,10 @@ app.get('/api/getMonthReport', auth, async (req, res) => {
     const m = parseInt(req.query.month) || new Date().getMonth()+1;
     const { start, end } = jstRangeOfMonth(y, m);
     const r = await pool.query(
-      `SELECT s.*, COALESCE(v.visited_at,s.created_at) as effective_date FROM sales s LEFT JOIN visits v ON v.sale_id=s.id WHERE s.user_id=$1 AND COALESCE(v.visited_at,s.created_at)>=$2 AND COALESCE(v.visited_at,s.created_at)<$3 ORDER BY effective_date`,
+      `SELECT s.*, COALESCE(v.visited_at,s.created_at) as effective_date, cu.name as customer_name FROM sales s LEFT JOIN visits v ON v.sale_id=s.id LEFT JOIN customers cu ON cu.id=v.customer_id WHERE s.user_id=$1 AND COALESCE(v.visited_at,s.created_at)>=$2 AND COALESCE(v.visited_at,s.created_at)<$3 ORDER BY effective_date`,
       [req.userId, start, end]
     );
-    const records = r.rows.map(row => ({ id:row.id, date:fmtDate(row.effective_date), time:fmtTime(row.effective_date), type:row.type, amount:row.amount }));
+    const records = r.rows.map(row => ({ id:row.id, date:fmtDate(row.effective_date), time:fmtTime(row.effective_date), type:row.type, amount:row.amount, customer_name: row.customer_name || null }));
     const s = calcStats(records.map(r => ({ ...r, cnt:1, sales:r.amount })));
     res.json({ year:y, month:m, records, summary:s });
   } catch(e) { res.status(500).json({ success:false, message:e.message }); }
@@ -932,10 +932,10 @@ app.get('/api/getDayRecords', auth, async (req, res) => {
     const d = parseInt(req.query.day)   || new Date().getDate();
     const { start, end } = jstRangeOfDay(y, m, d);
     const r = await pool.query(
-      `SELECT s.*, COALESCE(v.visited_at,s.created_at) as effective_date FROM sales s LEFT JOIN visits v ON v.sale_id=s.id WHERE s.user_id=$1 AND COALESCE(v.visited_at,s.created_at)>=$2 AND COALESCE(v.visited_at,s.created_at)<$3 ORDER BY effective_date`,
+      `SELECT s.*, COALESCE(v.visited_at,s.created_at) as effective_date, cu.name as customer_name FROM sales s LEFT JOIN visits v ON v.sale_id=s.id LEFT JOIN customers cu ON cu.id=v.customer_id WHERE s.user_id=$1 AND COALESCE(v.visited_at,s.created_at)>=$2 AND COALESCE(v.visited_at,s.created_at)<$3 ORDER BY effective_date`,
       [req.userId, start, end]
     );
-    const records = r.rows.map(row => ({ id:row.id, date:fmtDate(row.effective_date), time:fmtTime(row.effective_date), type:row.type, amount:row.amount }));
+    const records = r.rows.map(row => ({ id:row.id, date:fmtDate(row.effective_date), time:fmtTime(row.effective_date), type:row.type, amount:row.amount, customer_name: row.customer_name || null }));
     const s = calcStats(records.map(r => ({ ...r, cnt:1, sales:r.amount })));
     res.json({ year:y, month:m, day:d, records, summary:s });
   } catch(e) { res.status(500).json({ success:false, message:e.message }); }

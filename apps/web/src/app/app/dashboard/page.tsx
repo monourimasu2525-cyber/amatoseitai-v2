@@ -166,7 +166,10 @@ export default function DashboardPage() {
 
       {/* クイック入力 */}
       <div className={styles.plansWrap}>
-        <div className={styles.plansLbl}>クイック入力</div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8, padding: '0 14px' }}>
+          <div className={styles.plansLbl} style={{ marginBottom: 0 }}>クイック入力</div>
+          <div style={{ fontSize: 11, color: 'rgba(245,213,192,.5)' }}>顧客記録なし</div>
+        </div>
         <div className={styles.plansScroll}>
           {loading ? <span className="spin" style={{ margin: '8px 14px' }} /> : master.length === 0 ? (
             <div style={{ padding: '4px 14px', color: 'var(--sub2)', fontSize: 13 }}>設定からマスタを追加してください</div>
@@ -178,6 +181,9 @@ export default function DashboardPage() {
               <div className={styles.pcHint}>タップして入力</div>
             </button>
           ))}
+        </div>
+        <div style={{ padding: '6px 14px 0', fontSize: 11, color: 'rgba(245,213,192,.45)' }}>
+          顧客と紐づけて記録するには 顧客タブ → 来院登録
         </div>
       </div>
 
@@ -216,7 +222,12 @@ export default function DashboardPage() {
           ) : todayList.map(r => (
             <div key={r.id} className="li">
               <span className={`badge ${r.type === '新規' ? 'bs' : r.type === '常連' ? 'bj' : 'bo'}`}>{r.type}</span>
-              <span className="la">{fmt(r.amount)}</span>
+              <span className="la" style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {(r as Sale & { customer_name?: string }).customer_name && (
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)' }}>{(r as Sale & { customer_name?: string }).customer_name}</span>
+                )}
+                <span style={{ fontSize: 13 }}>{fmt(r.amount)}</span>
+              </span>
               <span className="lt">{r.time}</span>
               <button className="ib" style={{ marginRight: 4 }} onClick={() => { setEditId(r.id); setEditType(r.type); setEditAmount(r.amount); setEditOpen(true) }}>編集</button>
               <button className="db" onClick={() => handleDelete(r.id)}>✕</button>

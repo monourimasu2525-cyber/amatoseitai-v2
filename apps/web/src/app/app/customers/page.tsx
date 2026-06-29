@@ -34,6 +34,7 @@ export default function CustomersPage() {
   const [visitTarget, setVisitTarget] = useState<Customer | null>(null)
   const [visitForm, setVisitForm] = useState(EMPTY_VISIT)
   const [visitSaving, setVisitSaving] = useState(false)
+  const [karteOpen, setKarteOpen] = useState(false)
 
   const [toast, setToast] = useState('')
   const [deleteId, setDeleteId] = useState<number | null>(null)
@@ -63,7 +64,7 @@ export default function CustomersPage() {
     setForm({ name: c.name, phone: c.phone, birthday: c.birthday ? c.birthday.slice(0, 10) : '', memo: c.memo, source_id: c.source_id ? String(c.source_id) : '' })
     setEditOpen(true)
   }
-  function openVisit(c: Customer) { setVisitTarget(c); setVisitForm(EMPTY_VISIT); setVisitOpen(true) }
+  function openVisit(c: Customer) { setVisitTarget(c); setVisitForm(EMPTY_VISIT); setKarteOpen(false); setVisitOpen(true) }
 
   async function handleSave() {
     if (!form.name.trim()) { showToast('名前を入力してください'); return }
@@ -201,35 +202,28 @@ export default function CustomersPage() {
             <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8, marginBottom: 16 }}>
               {master.map(m => (
                 <button key={m.id} onClick={() => setVisitForm(p => ({ ...p, type: m.type, amount: String(m.amount) }))}
-                  style={{ padding: '8px 14px', borderRadius: 10, border: `2px solid ${visitForm.type === m.type ? 'var(--primary)' : 'var(--border)'}`, background: visitForm.type === m.type ? 'var(--primary-l)' : '#fff', color: visitForm.type === m.type ? 'var(--primary)' : 'var(--sub)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                  {m.type}<br /><span style={{ fontSize: 11, fontWeight: 500 }}>¥{m.amount.toLocaleString()}</span>
+                  style={{ padding: '10px 18px', borderRadius: 12, border: `2px solid ${visitForm.type === m.type ? 'var(--primary)' : 'var(--border)'}`, background: visitForm.type === m.type ? 'var(--primary)' : '#fff', color: visitForm.type === m.type ? '#fff' : 'var(--sub)', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}>
+                  {m.type}
+                  <span style={{ display: 'block', fontSize: 12, fontWeight: 500, opacity: .8 }}>¥{m.amount.toLocaleString()}</span>
                 </button>
               ))}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--sub)', marginBottom: 5 }}>種別（手入力）</label>
-                <input type="text" value={visitForm.type} onChange={e => setVisitForm(p => ({ ...p, type: e.target.value }))} placeholder="新規・常連など"
-                  style={{ width: '100%', padding: '11px 13px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, outline: 'none', boxSizing: 'border-box' as const }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--sub)', marginBottom: 5 }}>金額</label>
-                <input type="number" value={visitForm.amount} onChange={e => setVisitForm(p => ({ ...p, amount: e.target.value }))} placeholder="0"
-                  style={{ width: '100%', padding: '11px 13px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, outline: 'none', boxSizing: 'border-box' as const }} />
-              </div>
-            </div>
-
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--sub)', marginBottom: 5 }}>カルテ（任意）</label>
-              <textarea
-                value={visitForm.memo}
-                onChange={e => setVisitForm(p => ({ ...p, memo: e.target.value }))}
-                onFocus={e => { if (!e.target.value) setVisitForm(p => ({ ...p, memo: '【患者の訴え】\n\n【見立て・身体の状態】\n\n【施術内容】\n\n【施術後の説明・アドバイス】\n\n【次回に向けて】' })) }}
-                placeholder="カルテを記入（タップするとテンプレートが入ります）"
-                rows={8}
-                style={{ width: '100%', padding: '11px 13px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 13, outline: 'none', resize: 'none', boxSizing: 'border-box' as const, lineHeight: 1.6 }}
-              />
+            <div style={{ marginBottom: 16 }}>
+              <button onClick={() => setKarteOpen(o => !o)}
+                style={{ background: 'none', border: '1px dashed var(--border)', borderRadius: 10, padding: '9px 14px', fontSize: 13, color: 'var(--sub)', cursor: 'pointer', width: '100%', textAlign: 'left' as const }}>
+                {karteOpen ? '▲ カルテを閉じる' : '▼ カルテを記入する（任意）'}
+              </button>
+              {karteOpen && (
+                <textarea
+                  value={visitForm.memo}
+                  onChange={e => setVisitForm(p => ({ ...p, memo: e.target.value }))}
+                  onFocus={e => { if (!e.target.value) setVisitForm(p => ({ ...p, memo: '【患者の訴え】\n\n【見立て・身体の状態】\n\n【施術内容】\n\n【施術後の説明・アドバイス】\n\n【次回に向けて】' })) }}
+                  placeholder="タップするとテンプレートが入ります"
+                  rows={8}
+                  style={{ width: '100%', marginTop: 8, padding: '11px 13px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 13, outline: 'none', resize: 'none', boxSizing: 'border-box' as const, lineHeight: 1.6 }}
+                />
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>

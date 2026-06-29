@@ -43,6 +43,8 @@ export default function AnalysisPage() {
     setAdvYear(y); setAdvMonth(m)
   }
 
+  const isCurrent = advYear === now.getFullYear() && advMonth === now.getMonth() + 1
+
   return (
     <div className="page">
       <div className="ph"><h1>分析</h1></div>
@@ -50,7 +52,10 @@ export default function AnalysisPage() {
 
         <div className="mnav">
           <button className="mnav-btn" onClick={() => changeMonth(-1)}>◀ 前月</button>
-          <span className="mnav-label">{advYear}年{advMonth}月</span>
+          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <span className="mnav-label">{advYear}年{advMonth}月</span>
+            {isCurrent && <span style={{ fontSize: 10, color: 'var(--sub2)', fontWeight: 600, marginTop: 1 }}>月途中</span>}
+          </span>
           <button className="mnav-btn" onClick={() => changeMonth(1)}>翌月 ▶</button>
         </div>
 
@@ -70,17 +75,17 @@ export default function AnalysisPage() {
             <div className="kpi2">
               <div className="kc">
                 <div className="lbl">稼働率</div>
-                <div className="val" style={{ color: adv.utilization_rate >= 80 ? 'var(--pos)' : adv.utilization_rate >= 50 ? 'var(--text)' : 'var(--neg)' }}>
+                <div className="val" style={{ color: isCurrent ? 'var(--text)' : adv.utilization_rate >= 80 ? 'var(--pos)' : adv.utilization_rate >= 50 ? 'var(--text)' : 'var(--neg)' }}>
                   {adv.utilization_rate}%
                 </div>
-                <div className="sub">枠の使用率</div>
+                <div className="sub">{isCurrent ? '月途中の数値' : '枠の使用率'}</div>
               </div>
               <div className="kc">
                 <div className="lbl">継続率</div>
-                <div className="val" style={adv.retention_rate !== null ? { color: adv.retention_rate >= 70 ? 'var(--pos)' : adv.retention_rate >= 40 ? 'var(--text)' : 'var(--neg)' } : {}}>
+                <div className="val" style={adv.retention_rate !== null ? { color: isCurrent ? 'var(--text)' : adv.retention_rate >= 70 ? 'var(--pos)' : adv.retention_rate >= 40 ? 'var(--text)' : 'var(--neg)' } : {}}>
                   {adv.retention_rate !== null ? `${adv.retention_rate}%` : '—'}
                 </div>
-                <div className="sub">前月来院者の今月継続</div>
+                <div className="sub">{isCurrent ? '月途中の数値' : '前月来院者の今月継続'}</div>
               </div>
             </div>
 
