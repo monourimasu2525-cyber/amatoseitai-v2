@@ -17,8 +17,8 @@ interface AdvancedAnalytics {
   monthly_visits: { month: string; count: number }[]
 }
 
-const C = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
-  <div style={{ background: 'var(--card)', borderRadius: 10, boxShadow: 'var(--shadow)', ...style }}>{children}</div>
+const SL = ({ children }: { children: string }) => (
+  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--sub)', margin: '20px 0 8px', paddingLeft: 2 }}>{children}</div>
 )
 
 export default function AnalysisPage() {
@@ -63,124 +63,147 @@ export default function AnalysisPage() {
 
         {!loading && adv && (
           <>
-            {/* 来院数 / 稼働率 / 継続率 */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 6 }}>
-              <C style={{ padding: '10px 6px', textAlign: 'center' }}>
-                <div style={{ fontSize: 10, color: 'var(--sub)', marginBottom: 4 }}>来院数</div>
-                <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1, color: 'var(--primary)' }}>
-                  {adv.visit_count}<span style={{ fontSize: 12, fontWeight: 600 }}>件</span>
-                </div>
-                <div style={{ fontSize: 9, color: 'var(--sub2)', marginTop: 3 }}>{adv.active_days}日稼働</div>
-              </C>
-              <C style={{ padding: '10px 6px', textAlign: 'center' }}>
-                <div style={{ fontSize: 10, color: 'var(--sub)', marginBottom: 4 }}>稼働率</div>
-                <div style={{ fontSize: 24, fontWeight: 900, lineHeight: 1, color: isCurrent ? 'var(--primary)' : adv.utilization_rate >= 80 ? 'var(--pos)' : adv.utilization_rate >= 50 ? 'var(--primary)' : 'var(--neg)' }}>
+            {/* 今月の状況 */}
+            <SL>今月の状況</SL>
+
+            <div className="kpi-main gap">
+              <div className="lbl">来院数</div>
+              <div className="val">{adv.visit_count}<span style={{ fontSize: 20, fontWeight: 600, letterSpacing: 0 }}>件</span></div>
+              <div className="sub">{adv.active_days}日稼働 · 1日{adv.daily_capacity}枠</div>
+            </div>
+
+            <div className="kpi2">
+              <div className="kc">
+                <div className="lbl">稼働率</div>
+                <div className="val" style={{ color: isCurrent ? 'var(--text)' : adv.utilization_rate >= 80 ? 'var(--pos)' : adv.utilization_rate >= 50 ? 'var(--text)' : 'var(--neg)' }}>
                   {adv.utilization_rate}%
                 </div>
-                <div style={{ fontSize: 9, color: 'var(--sub2)', marginTop: 3 }}>{isCurrent ? '月途中' : '枠使用率'}</div>
-              </C>
-              <C style={{ padding: '10px 6px', textAlign: 'center' }}>
-                <div style={{ fontSize: 10, color: 'var(--sub)', marginBottom: 4 }}>継続率</div>
-                <div style={{ fontSize: 24, fontWeight: 900, lineHeight: 1, color: adv.retention_rate !== null ? (isCurrent ? 'var(--primary)' : adv.retention_rate >= 70 ? 'var(--pos)' : adv.retention_rate >= 40 ? 'var(--primary)' : 'var(--neg)') : 'var(--sub)' }}>
+                <div className="sub">{isCurrent ? '月途中の数値' : '枠の使用率'}</div>
+              </div>
+              <div className="kc">
+                <div className="lbl">継続率</div>
+                <div className="val" style={adv.retention_rate !== null ? { color: isCurrent ? 'var(--text)' : adv.retention_rate >= 70 ? 'var(--pos)' : adv.retention_rate >= 40 ? 'var(--text)' : 'var(--neg)' } : {}}>
                   {adv.retention_rate !== null ? `${adv.retention_rate}%` : '—'}
                 </div>
-                <div style={{ fontSize: 9, color: 'var(--sub2)', marginTop: 3 }}>{isCurrent ? '月途中' : '前月→今月'}</div>
-              </C>
+                <div className="sub">{isCurrent ? '月途中の数値' : '前月来院者の今月継続'}</div>
+              </div>
             </div>
 
-            {/* LTV / 2回目来院率 */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 6 }}>
-              <C style={{ padding: '10px 12px' }}>
-                <div style={{ fontSize: 10, color: 'var(--sub)', marginBottom: 3 }}>年間LTV</div>
-                <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--primary)', letterSpacing: '-.5px', lineHeight: 1.1 }}>
-                  {adv.annual_ltv ? fmt(adv.annual_ltv) : '—'}
-                </div>
-                <div style={{ fontSize: 9, color: 'var(--sub2)', marginTop: 3 }}>患者1人の年間平均売上</div>
-              </C>
-              <C style={{ padding: '10px 12px' }}>
-                <div style={{ fontSize: 10, color: 'var(--sub)', marginBottom: 3 }}>2回目来院率</div>
-                <div style={{ fontSize: 24, fontWeight: 900, lineHeight: 1.1, color: adv.repeat_rates ? (adv.repeat_rates.v2 >= 70 ? 'var(--pos)' : adv.repeat_rates.v2 >= 40 ? 'var(--primary)' : 'var(--neg)') : 'var(--sub)' }}>
+            {/* 顧客の定着 */}
+            <SL>顧客の定着</SL>
+
+            <div className="kpi2">
+              <div className="kc gap">
+                <div className="lbl">年間LTV</div>
+                <div className="val" style={{ fontSize: 18, letterSpacing: '-.5px' }}>{adv.annual_ltv ? fmt(adv.annual_ltv) : '—'}</div>
+                <div className="sub">患者1人の年間平均売上</div>
+              </div>
+              <div className="kc gap">
+                <div className="lbl">2回目来院率</div>
+                <div className="val" style={{ color: adv.repeat_rates ? (adv.repeat_rates.v2 >= 70 ? 'var(--pos)' : adv.repeat_rates.v2 >= 40 ? 'var(--text)' : 'var(--neg)') : undefined }}>
                   {adv.repeat_rates ? `${adv.repeat_rates.v2}%` : '—'}
                 </div>
-                <div style={{ fontSize: 9, color: 'var(--sub2)', marginTop: 3 }}>初回来院者が再来した割合</div>
-              </C>
+                <div className="sub">初回来院者が再来した割合</div>
+              </div>
             </div>
 
-            {/* リピート率 4列コンパクト */}
-            <C style={{ padding: '10px 12px', marginBottom: 6 }}>
-              <div style={{ fontSize: 10, color: 'var(--sub)', marginBottom: 8 }}>リピート率（全期間・累計{adv.repeat_total}人）</div>
+            <div className="card gap">
+              <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--primary)' }}>リピート率（全期間コホート）</div>
+                <div style={{ fontSize: 11, color: 'var(--sub2)' }}>累計{adv.repeat_total}人</div>
+              </div>
               {adv.repeat_rates ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 4 }}>
+                <div style={{ padding: '14px 16px' }}>
                   {([['2回目', adv.repeat_rates.v2], ['3回目', adv.repeat_rates.v3], ['4回目', adv.repeat_rates.v4], ['5回目', adv.repeat_rates.v5]] as [string, number][]).map(([label, pct]) => (
-                    <div key={label} style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 9, color: 'var(--sub2)', marginBottom: 2 }}>{label}</div>
-                      <div style={{ fontSize: 20, fontWeight: 900, lineHeight: 1, color: pct >= 70 ? 'var(--pos)' : pct >= 40 ? 'var(--primary)' : 'var(--neg)' }}>{pct}%</div>
+                    <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                      <div style={{ width: 38, fontSize: 12, color: 'var(--sub)', textAlign: 'right', flexShrink: 0 }}>{label}</div>
+                      <div style={{ flex: 1, background: 'var(--border)', borderRadius: 4, height: 18 }}>
+                        <div style={{ width: `${pct}%`, background: pct >= 70 ? 'var(--pos)' : '#C4622D', borderRadius: 4, height: '100%', minWidth: 4, transition: 'width .4s' }} />
+                      </div>
+                      <div style={{ width: 38, fontSize: 13, fontWeight: 800, color: pct >= 70 ? 'var(--pos)' : 'var(--primary)', textAlign: 'right', flexShrink: 0 }}>{pct}%</div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div style={{ textAlign: 'center', color: 'var(--sub2)', fontSize: 12 }}>来院データがありません</div>
+                <div style={{ padding: 16, textAlign: 'center', color: 'var(--sub2)' }}>来院データがありません</div>
               )}
-            </C>
+            </div>
 
-            {/* 年間推移 縦棒グラフ */}
-            {adv.monthly_visits.length > 0 && (() => {
-              const maxCount = Math.max(...adv.monthly_visits.map(x => x.count), 1)
-              return (
-                <C style={{ padding: '10px 12px', marginBottom: 6 }}>
-                  <div style={{ fontSize: 10, color: 'var(--sub)', marginBottom: 8 }}>年間推移（過去12ヶ月）</div>
-                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 72 }}>
-                    {adv.monthly_visits.map(m => {
-                      const isCurrentM = m.month === `${advYear}-${String(advMonth).padStart(2, '0')}`
-                      const h = Math.max(Math.round((m.count / maxCount) * 60), m.count > 0 ? 4 : 0)
-                      return (
-                        <div key={m.month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}>
-                          <div style={{ fontSize: 8, fontWeight: 700, color: isCurrentM ? '#C4622D' : 'var(--sub2)', lineHeight: 1, marginBottom: 2 }}>{m.count}</div>
-                          <div style={{ width: '100%', height: h, background: isCurrentM ? '#C4622D' : '#DDB89A', borderRadius: '2px 2px 0 0' }} />
-                        </div>
-                      )
-                    })}
-                  </div>
-                  <div style={{ display: 'flex', gap: 3, marginTop: 4 }}>
-                    {adv.monthly_visits.map(m => (
-                      <div key={m.month} style={{ flex: 1, textAlign: 'center', fontSize: 8, color: 'var(--sub2)' }}>{m.month.slice(5)}</div>
-                    ))}
-                  </div>
-                </C>
-              )
-            })()}
-
-            {/* 媒体別・CPA */}
+            {/* 集客の効率 */}
             {(adv.source_breakdown.length > 0 || adv.cpa_list.length > 0) ? (
-              <C style={{ padding: '10px 12px' }}>
-                <div style={{ fontSize: 10, color: 'var(--sub)', marginBottom: 8 }}>集客の効率（{advMonth}月）</div>
+              <>
+                <SL>集客の効率（{advMonth}月）</SL>
+
                 {adv.source_breakdown.length > 0 && (
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: adv.cpa_list.length > 0 ? 10 : 0 }}>
-                    {adv.source_breakdown.map(s => (
-                      <div key={s.channel_id} style={{ background: 'var(--bg)', borderRadius: 6, padding: '4px 8px' }}>
-                        <span style={{ fontSize: 11, color: 'var(--sub)' }}>{s.channel_name}</span>
-                        <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--primary)', marginLeft: 6 }}>{s.count}人</span>
-                      </div>
-                    ))}
+                  <div className="card gap">
+                    <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--primary)' }}>媒体別 新規顧客数</div>
+                    </div>
+                    <table className="tbl">
+                      <thead><tr><th>媒体</th><th className="r">新規数</th></tr></thead>
+                      <tbody>
+                        {adv.source_breakdown.map(s => (
+                          <tr key={s.channel_id}>
+                            <td style={{ fontWeight: 600 }}>{s.channel_name}</td>
+                            <td className="r">{s.count}人</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
+
                 {adv.cpa_list.length > 0 && (
-                  <>
-                    <div style={{ fontSize: 10, color: 'var(--sub2)', marginBottom: 6 }}>CPA（広告費 ÷ 新規数）</div>
-                    {adv.cpa_list.map(c => (
-                      <div key={c.channel_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                        <span style={{ fontSize: 12, color: 'var(--sub)', fontWeight: 600 }}>{c.channel_name}</span>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--primary)' }}>{c.cpa ? fmt(c.cpa) : '—'}</span>
-                      </div>
-                    ))}
-                    <div style={{ fontSize: 10, color: 'var(--sub2)', marginTop: 6 }}>設定 → 広告媒体から広告費を入力できます</div>
-                  </>
+                  <div className="card gap">
+                    <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--primary)' }}>CPA（広告費 ÷ 新規数）</div>
+                    </div>
+                    <table className="tbl">
+                      <thead><tr><th>媒体</th><th className="r">広告費</th><th className="r">新規</th><th className="r">CPA</th></tr></thead>
+                      <tbody>
+                        {adv.cpa_list.map(c => (
+                          <tr key={c.channel_id}>
+                            <td style={{ fontWeight: 600 }}>{c.channel_name}</td>
+                            <td className="r" style={{ color: 'var(--sub)' }}>{fmt(c.spend)}</td>
+                            <td className="r" style={{ color: 'var(--sub)' }}>{c.new_customers}人</td>
+                            <td className="num">{c.cpa ? fmt(c.cpa) : '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div style={{ padding: '8px 16px 12px', fontSize: 11, color: 'var(--sub2)' }}>
+                      設定 → 広告媒体から広告費を入力できます
+                    </div>
+                  </div>
                 )}
-              </C>
+              </>
             ) : (
-              <C style={{ padding: '12px 16px', textAlign: 'center' }}>
-                <div style={{ fontSize: 12, color: 'var(--sub2)' }}>設定ページで広告媒体を登録すると<br />媒体別分析・CPAが使えます</div>
-              </C>
+              <div className="card cp gap" style={{ textAlign: 'center', color: 'var(--sub2)', fontSize: 13, marginTop: 20 }}>
+                設定ページで広告媒体を登録すると<br />媒体別分析・CPAが使えます
+              </div>
+            )}
+
+            {/* 年間推移 */}
+            {adv.monthly_visits.length > 0 && (
+              <>
+                <SL>年間推移（過去12ヶ月）</SL>
+                <div className="card gap">
+                  <div style={{ padding: '14px 16px' }}>
+                    {(() => {
+                      const maxCount = Math.max(...adv.monthly_visits.map(x => x.count), 1)
+                      return adv.monthly_visits.map(m => (
+                        <div key={m.month} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                          <div style={{ width: 30, fontSize: 12, color: 'var(--sub)', flexShrink: 0, textAlign: 'right' }}>{m.month.slice(5)}月</div>
+                          <div style={{ flex: 1, background: 'var(--border)', borderRadius: 4, height: 20 }}>
+                            <div style={{ width: `${(m.count / maxCount) * 100}%`, background: 'var(--accent)', borderRadius: 4, height: '100%', minWidth: 4 }} />
+                          </div>
+                          <div style={{ width: 30, fontSize: 13, fontWeight: 700, color: 'var(--primary)', textAlign: 'right', flexShrink: 0 }}>{m.count}</div>
+                        </div>
+                      ))
+                    })()}
+                  </div>
+                </div>
+              </>
             )}
           </>
         )}
