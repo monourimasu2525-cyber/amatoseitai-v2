@@ -18,7 +18,7 @@ interface AdvancedAnalytics {
 }
 
 const SL = ({ children }: { children: string }) => (
-  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--sub)', margin: '20px 0 8px', paddingLeft: 2 }}>{children}</div>
+  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--sub)', margin: '22px 0 8px', paddingLeft: 2 }}>{children}</div>
 )
 
 export default function AnalysisPage() {
