@@ -30,6 +30,11 @@ export default function DashboardPage() {
   const [successShow, setSuccessShow] = useState(false)
   const [successInfo, setSuccessInfo] = useState({ type: '', amount: 0, method: '' })
 
+  // 患者選択（クイック入力）
+  const [customerSearch, setCustomerSearch] = useState('')
+  const [customerResults, setCustomerResults] = useState<{ id: number; name: string }[]>([])
+  const [selectedCustomer, setSelectedCustomer] = useState<{ id: number; name: string; isNew?: boolean } | null>(null)
+
   // 編集モーダル
   const [editOpen, setEditOpen] = useState(false)
   const [editId, setEditId] = useState(0)
@@ -108,16 +113,50 @@ export default function DashboardPage() {
     if (!loading) loadChart()
   }, [loading])
 
+  async function handleCustomerSearch(e: React.ChangeEvent<HTMLInputElement>) {
+    const v = e.target.value
+    setCustomerSearch(v)
+    setSelectedCustomer(null)
+    if (v.trim().length >= 1) {
+      try {
+        const d = await GET<{ success: boolean; customers: { id: number; name: string }[] }>('/api/customers', { search: v.trim() })
+        setCustomerResults(d.customers || [])
+      } catch { setCustomerResults([]) }
+    } else {
+      setCustomerResults([])
+    }
+  }
+
+  function resetCustomer() {
+    setCustomerSearch('')
+    setCustomerResults([])
+    setSelectedCustomer(null)
+  }
+
   async function confirmSale(method: string) {
     setPayOpen(false)
     try {
-      const r = await POST<{ success: boolean; message: string }>('/api/addSale', { type: pendingType, amount: pendingAmount })
-      if (r.success) {
+      let success = false, message = ''
+      if (selectedCustomer) {
+        let customerId = selectedCustomer.id
+        if (selectedCustomer.isNew) {
+          const cr = await POST<{ success: boolean; message: string; customer: { id: number } }>('/api/customers', { name: selectedCustomer.name })
+          if (!cr.success) { toast(cr.message, true); return }
+          customerId = cr.customer.id
+        }
+        const r = await POST<{ success: boolean; message: string }>('/api/visits', { customer_id: customerId, type: pendingType, amount: pendingAmount })
+        success = r.success; message = r.message
+      } else {
+        const r = await POST<{ success: boolean; message: string }>('/api/addSale', { type: pendingType, amount: pendingAmount })
+        success = r.success; message = r.message
+      }
+      if (success) {
         setSuccessInfo({ type: pendingType, amount: pendingAmount, method })
         setSuccessShow(true)
         setTimeout(() => setSuccessShow(false), 1500)
+        resetCustomer()
         loadData()
-      } else toast(r.message, true)
+      } else toast(message, true)
     } catch { toast('登録に失敗しました', true) }
   }
 
@@ -258,13 +297,53 @@ export default function DashboardPage() {
 
       {/* 支払方法シート */}
       {payOpen && (
-        <div className={styles.overlay} onClick={() => setPayOpen(false)}>
+        <div className={styles.overlay} onClick={() => { setPayOpen(false); resetCustomer() }}>
           <div className={styles.paySheet} onClick={e => e.stopPropagation()}>
             <div className={styles.handle} />
             <div className={styles.payPlanInfo}>
               <div className={styles.payPlanName}>{pendingType}</div>
               <div className={styles.payPlanAmt}>{fmt(pendingAmount)}</div>
             </div>
+
+            {/* 患者選択 */}
+            <div style={{ padding: '0 16px 14px' }}>
+              <div style={{ fontSize: 11, color: 'rgba(245,213,192,.45)', marginBottom: 6 }}>患者（任意）</div>
+              {selectedCustomer ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(196,98,45,.18)', borderRadius: 8, padding: '8px 12px' }}>
+                  <span style={{ color: '#F5D5C0', fontWeight: 700, fontSize: 14 }}>
+                    {selectedCustomer.isNew ? '＋ 新規: ' : ''}{selectedCustomer.name}
+                  </span>
+                  <button onClick={resetCustomer} style={{ color: 'rgba(245,213,192,.5)', fontSize: 12, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px' }}>✕ 解除</button>
+                </div>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    placeholder="名前を入力または検索..."
+                    value={customerSearch}
+                    onChange={handleCustomerSearch}
+                    style={{ width: '100%', background: 'rgba(61,35,20,.5)', border: '1px solid rgba(196,98,45,.3)', borderRadius: 8, padding: '8px 12px', color: '#F5D5C0', fontSize: 14, boxSizing: 'border-box', outline: 'none' }}
+                  />
+                  {(customerResults.length > 0 || customerSearch.trim().length > 0) && (
+                    <div style={{ background: 'rgba(30,15,8,.95)', borderRadius: 8, marginTop: 4, overflow: 'hidden', border: '1px solid rgba(196,98,45,.2)' }}>
+                      {customerResults.slice(0, 4).map(c => (
+                        <button key={c.id} onClick={() => { setSelectedCustomer(c); setCustomerSearch(c.name); setCustomerResults([]) }}
+                          style={{ display: 'block', width: '100%', padding: '9px 12px', textAlign: 'left', color: '#F5D5C0', fontSize: 14, background: 'none', border: 'none', borderBottom: '1px solid rgba(196,98,45,.15)', cursor: 'pointer' }}>
+                          {c.name}
+                        </button>
+                      ))}
+                      {customerSearch.trim().length > 0 && (
+                        <button onClick={() => { setSelectedCustomer({ id: 0, name: customerSearch.trim(), isNew: true }); setCustomerResults([]) }}
+                          style={{ display: 'block', width: '100%', padding: '9px 12px', textAlign: 'left', color: '#C4622D', fontSize: 13, fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer' }}>
+                          ＋ 新規登録: {customerSearch.trim()}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
             <div className={styles.payMethods}>
               {[{ method: '現金', icon: '💴' }, { method: 'クレカ', icon: '💳' }, { method: 'PayPay', icon: '📱' }].map(p => (
                 <button key={p.method} className={styles.payBtn} onClick={() => confirmSale(p.method)}>
@@ -273,7 +352,7 @@ export default function DashboardPage() {
                 </button>
               ))}
             </div>
-            <button className={styles.sheetCancel} onClick={() => setPayOpen(false)}>キャンセル</button>
+            <button className={styles.sheetCancel} onClick={() => { setPayOpen(false); resetCustomer() }}>キャンセル</button>
           </div>
         </div>
       )}
