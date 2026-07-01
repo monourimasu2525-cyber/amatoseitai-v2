@@ -132,7 +132,7 @@ export default function AnalysisPage() {
             {/* 集客の効率 */}
             {(adv.source_breakdown.length > 0 || adv.cpa_list.length > 0) ? (
               <>
-                <SL>集客の効率（{advMonth}月）</SL>
+                <SL>{`集客の効率（${advMonth}月）`}</SL>
 
                 {adv.source_breakdown.length > 0 && (
                   <div className="card gap">
