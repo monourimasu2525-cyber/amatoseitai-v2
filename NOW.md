@@ -135,6 +135,11 @@
   - 新規患者をその場で登録可能（名前のみ）
   - 顧客あり→/api/visits、顧客なし→/api/addSale
 
+## バグ修正（2026-07-01）
+- Vercelビルド失敗の原因: `<SL>集客の効率（{advMonth}月）</SL>` でchildren型エラー → テンプレートリテラルに修正
+- dashboard/page.tsx で `React.ChangeEvent<HTMLInputElement>` 使用時にReactインポート追加
+- 上記2件のTSエラーにより `657851f` 以降のVercelビルドが全て失敗していた（`4e6e725`コンパクト版が表示され続けていた）
+
 ## 残タスク
 - 広告費の月次入力UIをフロントに追加（index.jsのAPIは完成）
 - 既存顧客への集客媒体登録（現状は新規顧客追加時のみ設定可）
