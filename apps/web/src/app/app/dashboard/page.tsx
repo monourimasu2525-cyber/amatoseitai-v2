@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { GET, POST, PUT, DEL } from '@/lib/api'
 import type { InitData, MasterItem, Sale, MonthStats } from '@/types'
