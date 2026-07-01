@@ -23,8 +23,11 @@ const SL = ({ children }: { children: string }) => (
 
 export default function AnalysisPage() {
   const now = new Date()
-  const [advYear, setAdvYear] = useState(now.getFullYear())
-  const [advMonth, setAdvMonth] = useState(now.getMonth() + 1)
+  // デフォルトは前月（最新の完結データがある月）
+  const defaultMonth = now.getMonth() === 0 ? 12 : now.getMonth()
+  const defaultYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear()
+  const [advYear, setAdvYear] = useState(defaultYear)
+  const [advMonth, setAdvMonth] = useState(defaultMonth)
   const [adv, setAdv] = useState<AdvancedAnalytics | null>(null)
   const [loading, setLoading] = useState(false)
 
