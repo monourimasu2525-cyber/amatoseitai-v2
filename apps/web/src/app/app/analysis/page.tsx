@@ -18,7 +18,7 @@ interface AdvancedAnalytics {
 }
 
 const SL = ({ children }: { children: string }) => (
-  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--sub)', margin: '24px 0 10px', paddingLeft: 2 }}>{children}</div>
+  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--sub)', margin: '20px 0 8px', paddingLeft: 2 }}>{children}</div>
 )
 
 export default function AnalysisPage() {
@@ -66,54 +66,51 @@ export default function AnalysisPage() {
             {/* 今月の状況 */}
             <SL>今月の状況</SL>
 
-            <div className="kpi-main gap" style={{ marginBottom: 14 }}>
+            <div className="kpi-main gap">
               <div className="lbl">来院数</div>
               <div className="val">{adv.visit_count}<span style={{ fontSize: 20, fontWeight: 600, letterSpacing: 0 }}>件</span></div>
-              <div className="sub">{advYear}年{advMonth}月の合計（{adv.active_days}日稼働）</div>
+              <div className="sub">{adv.active_days}日稼働 · 1日{adv.daily_capacity}枠</div>
             </div>
 
-            <div className="kpi2" style={{ marginBottom: 14 }}>
+            <div className="kpi2">
               <div className="kc">
                 <div className="lbl">稼働率</div>
                 <div className="val" style={{ color: isCurrent ? 'var(--text)' : adv.utilization_rate >= 80 ? 'var(--pos)' : adv.utilization_rate >= 50 ? 'var(--text)' : 'var(--neg)' }}>
                   {adv.utilization_rate}%
                 </div>
-                <div className="sub">{isCurrent ? '月途中の数値' : `${advMonth}月 · 1日${adv.daily_capacity}枠基準`}</div>
+                <div className="sub">{isCurrent ? '月途中の数値' : '枠の使用率'}</div>
               </div>
               <div className="kc">
                 <div className="lbl">継続率</div>
                 <div className="val" style={adv.retention_rate !== null ? { color: isCurrent ? 'var(--text)' : adv.retention_rate >= 70 ? 'var(--pos)' : adv.retention_rate >= 40 ? 'var(--text)' : 'var(--neg)' } : {}}>
                   {adv.retention_rate !== null ? `${adv.retention_rate}%` : '—'}
                 </div>
-                <div className="sub">{isCurrent ? '月途中の数値' : '前月来院者が今月も来た割合'}</div>
+                <div className="sub">{isCurrent ? '月途中の数値' : '前月来院者の今月継続'}</div>
               </div>
             </div>
 
             {/* 顧客の定着 */}
             <SL>顧客の定着</SL>
 
-            <div className="kpi2" style={{ marginBottom: 14 }}>
+            <div className="kpi2">
               <div className="kc gap">
                 <div className="lbl">年間LTV</div>
                 <div className="val" style={{ fontSize: 18, letterSpacing: '-.5px' }}>{adv.annual_ltv ? fmt(adv.annual_ltv) : '—'}</div>
-                <div className="sub">過去12ヶ月の総売上 ÷ 来院顧客数</div>
+                <div className="sub">患者1人の年間平均売上</div>
               </div>
               <div className="kc gap">
                 <div className="lbl">2回目来院率</div>
                 <div className="val" style={{ color: adv.repeat_rates ? (adv.repeat_rates.v2 >= 70 ? 'var(--pos)' : adv.repeat_rates.v2 >= 40 ? 'var(--text)' : 'var(--neg)') : undefined }}>
                   {adv.repeat_rates ? `${adv.repeat_rates.v2}%` : '—'}
                 </div>
-                <div className="sub">初回来院後に2回目来院した割合（全期間）</div>
+                <div className="sub">初回来院者が再来した割合</div>
               </div>
             </div>
 
-            <div className="card gap" style={{ marginBottom: 14 }}>
-              <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--primary)' }}>リピート率</div>
-                  <div style={{ fontSize: 11, color: 'var(--sub2)' }}>累計{adv.repeat_total}人</div>
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--sub2)', marginTop: 3 }}>初回来院者がN回目まで来た割合（全期間コホート分析）</div>
+            <div className="card gap">
+              <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--primary)' }}>リピート率（全期間コホート）</div>
+                <div style={{ fontSize: 11, color: 'var(--sub2)' }}>累計{adv.repeat_total}人</div>
               </div>
               {adv.repeat_rates ? (
                 <div style={{ padding: '14px 16px' }}>
