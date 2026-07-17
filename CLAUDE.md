@@ -8,17 +8,17 @@
 
 ## 構成
 
-- `index.html` — フロントエンド（移行後廃止予定）
-- `index.js` — Express APIサーバー（Railway上で動作・Phase 1は変更なし）
-- `apps/web/` — Next.js フロント（Vercelデプロイ・移行先）
+- `index.html` — 旧フロントエンド（廃止済み・GitHub Pages停止済み 2026-07-17）
+- `index.js` — Express APIサーバー（Railway上で動作）
+- `apps/web/` — Next.js フロント（Vercelデプロイ・現行フロント）
 - DB: Railway PostgreSQL（`DATABASE_URL`環境変数）
 
 ## デプロイ
 
 ```
 git push だけで両方自動デプロイされる
-- index.html → GitHub Pages（1〜2分）
-- index.js   → Railway（自動）
+- apps/web/ → Vercel（自動）
+- index.js  → Railway（自動）
 ```
 
 git push はClaudeが行う。

@@ -148,6 +148,11 @@
 - 集客媒体データ: ホームページ8人・チラシ7人・紹介7人・その他3人 すべて表示OK
 - 7月デフォルト時に全媒体0表示に見えた問題 → 前月デフォルト変更で解消
 
+## 動作確認（2026-07-17）
+- ローカル開発サーバー（apps/web, port 3000）稼働中（/login → 200 OK）
+- 本番も両方正常: Vercel（https://amatoseitai-v2.vercel.app → 200）/ Railway API（/health → 200 {"status":"ok"}）
+- GitHub Pages（旧index.html）を廃止（Pages設定を削除、旧URLは404を確認）。フロントはVercelのみ
+
 ## 残タスク
 - 広告費の月次入力UIをフロントに追加（index.jsのAPIは完成）
 - 既存顧客への集客媒体登録（現状は新規顧客追加時のみ設定可）
