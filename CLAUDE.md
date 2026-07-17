@@ -8,7 +8,6 @@
 
 ## 構成
 
-- `index.html` — 旧フロントエンド（廃止済み・GitHub Pages停止済み 2026-07-17）
 - `index.js` — Express APIサーバー（Railway上で動作）
 - `apps/web/` — Next.js フロント（Vercelデプロイ・現行フロント）
 - DB: Railway PostgreSQL（`DATABASE_URL`環境変数）

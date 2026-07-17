@@ -16,17 +16,19 @@
 
 ---
 
-## 2. 現在の構成（移行元）
+## 2. 現在の構成
 
 ```
-index.html  → GitHub Pages（フロント全体・1355行）
-index.js    → Railway（Express API・389行）
+apps/web/   → Vercel（Next.js フロント）
+index.js    → Railway（Express API）
 DB          → Railway PostgreSQL
 ```
 
+※旧 index.html（GitHub Pages）は2026-07-17に廃止・削除済み
+
 ### デプロイ
 - `git push` だけで両方自動デプロイ
-- GitHub Pages: index.html
+- Vercel: apps/web/（Root Directory）
 - Railway: index.js（`PORT`環境変数）
 
 ### 重要な環境変数
@@ -96,7 +98,7 @@ master_items
 
 ---
 
-## 5. 現在の画面・機能一覧（index.html）
+## 5. 画面・機能一覧（旧index.html由来 → 現apps/web/で提供）
 
 ### 認証
 - ログイン（メール+パスワード）
@@ -183,7 +185,6 @@ master_items
 ```
 amatoseitai-v2/
 ├── index.js              ← Railway（変更なし）
-├── index.html            ← 移行後は廃止
 ├── package.json          ← Railway用（変更なし）
 ├── SPEC.md               ← この仕様書
 ├── NOW.md                ← 現在の作業状況

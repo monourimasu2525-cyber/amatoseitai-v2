@@ -152,6 +152,7 @@
 - ローカル開発サーバー（apps/web, port 3000）稼働中（/login → 200 OK）
 - 本番も両方正常: Vercel（https://amatoseitai-v2.vercel.app → 200）/ Railway API（/health → 200 {"status":"ok"}）
 - GitHub Pages（旧index.html）を廃止（Pages設定を削除、旧URLは404を確認）。フロントはVercelのみ
+- index.html本体もリポジトリから削除（コード参照なしを確認済み）
 
 ## 残タスク
 - 広告費の月次入力UIをフロントに追加（index.jsのAPIは完成）
