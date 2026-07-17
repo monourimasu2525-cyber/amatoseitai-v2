@@ -122,6 +122,25 @@ async function initDb() {
       UNIQUE(clinic_id, channel_id, year, month)
     );
     ALTER TABLE customers ADD COLUMN IF NOT EXISTS source_id INTEGER REFERENCES advertising_channels(id) ON DELETE SET NULL;
+    ALTER TABLE clinics ADD COLUMN IF NOT EXISTS booking_open_time VARCHAR(5) DEFAULT '09:00';
+    ALTER TABLE clinics ADD COLUMN IF NOT EXISTS booking_close_time VARCHAR(5) DEFAULT '19:00';
+    ALTER TABLE clinics ADD COLUMN IF NOT EXISTS booking_slot_minutes INTEGER DEFAULT 60;
+    ALTER TABLE clinics ADD COLUMN IF NOT EXISTS booking_closed_weekdays VARCHAR(20) DEFAULT '0';
+    CREATE TABLE IF NOT EXISTS reservations (
+      id SERIAL PRIMARY KEY,
+      clinic_id INTEGER NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
+      customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+      name VARCHAR(100) NOT NULL,
+      phone VARCHAR(20) NOT NULL,
+      email VARCHAR(255) DEFAULT '',
+      menu VARCHAR(50) DEFAULT '',
+      note TEXT DEFAULT '',
+      start_at TIMESTAMPTZ NOT NULL,
+      status VARCHAR(20) NOT NULL DEFAULT 'confirmed',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_reservations_slot ON reservations(clinic_id, start_at) WHERE status='confirmed';
+    CREATE INDEX IF NOT EXISTS idx_reservations_clinic_start ON reservations(clinic_id, start_at);
   `);
 }
 
@@ -1072,6 +1091,140 @@ app.post('/api/importCsv', auth, upload.single('file'), async (req, res) => {
     }
     res.json({ success:true, message:`${imported}件インポートしました${skipped>0?`（${skipped}件スキップ）`:''}`, imported, skipped });
   } catch(e) { res.status(500).json({ success:false, message:e.message }); }
+});
+
+// ===== ネット予約API（公開・認証不要）=====
+const bookingLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'リクエストが多すぎます。しばらくしてから再試行してください。' },
+});
+
+// 予約受付は開始30分前まで
+const BOOKING_CUTOFF_MS = 30 * 60 * 1000;
+
+async function getBookingClinic(slug) {
+  const r = await pool.query('SELECT * FROM clinics WHERE slug=$1', [slug]);
+  return r.rows[0] || null;
+}
+
+// 指定日の予約枠（時刻文字列の配列）。定休日は空配列
+function slotTimesForDate(clinic, dateStr) {
+  const wd = toJST(new Date(`${dateStr}T00:00:00+09:00`)).getUTCDay();
+  const closed = String(clinic.booking_closed_weekdays || '').split(',').filter(s => s !== '').map(Number);
+  if (closed.includes(wd)) return [];
+  const [oh, om] = String(clinic.booking_open_time || '09:00').split(':').map(Number);
+  const [ch, cm] = String(clinic.booking_close_time || '19:00').split(':').map(Number);
+  const step = clinic.booking_slot_minutes || 60;
+  const times = [];
+  for (let min = oh * 60 + om; min + step <= ch * 60 + cm; min += step) {
+    times.push(`${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`);
+  }
+  return times;
+}
+
+function slotStartAt(dateStr, time) { return new Date(`${dateStr}T${time}:00+09:00`); }
+
+// 院情報＋メニュー
+app.get('/api/booking/:slug', async (req, res) => {
+  try {
+    const clinic = await getBookingClinic(req.params.slug);
+    if (!clinic) return res.status(404).json({ success: false, message: 'ページが見つかりません' });
+    const menus = await pool.query(
+      'SELECT type, amount, description FROM master_items WHERE clinic_id=$1 AND is_active=TRUE ORDER BY amount',
+      [clinic.id]
+    );
+    res.json({ success: true, clinic: { name: clinic.name }, menus: menus.rows });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// 月の空き枠
+app.get('/api/booking/:slug/slots', async (req, res) => {
+  try {
+    const clinic = await getBookingClinic(req.params.slug);
+    if (!clinic) return res.status(404).json({ success: false, message: 'ページが見つかりません' });
+    const year = parseInt(req.query.year), month = parseInt(req.query.month);
+    if (!year || !month || month < 1 || month > 12) return res.json({ success: false, message: '年月が不正です' });
+    const { start, end } = jstRangeOfMonth(year, month);
+    const r = await pool.query(
+      `SELECT start_at FROM reservations WHERE clinic_id=$1 AND status='confirmed' AND start_at>=$2 AND start_at<$3`,
+      [clinic.id, start, end]
+    );
+    const taken = new Set(r.rows.map(row => row.start_at.getTime()));
+    const cutoff = Date.now() + BOOKING_CUTOFF_MS;
+    const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    const days = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const times = slotTimesForDate(clinic, dateStr);
+      const slots = times.map(t => {
+        const at = slotStartAt(dateStr, t).getTime();
+        return { time: t, available: at > cutoff && !taken.has(at) };
+      });
+      days.push({ date: dateStr, closed: times.length === 0, slots });
+    }
+    res.json({ success: true, days });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// 予約作成（二重予約はユニーク制約で防止）
+app.post('/api/booking/:slug/reserve', bookingLimiter, async (req, res) => {
+  try {
+    const clinic = await getBookingClinic(req.params.slug);
+    if (!clinic) return res.status(404).json({ success: false, message: 'ページが見つかりません' });
+    const { date, time, menu = '', name, phone, email = '' } = req.body;
+    if (!name?.trim() || !phone?.trim()) return res.json({ success: false, message: 'お名前と電話番号を入力してください' });
+    if (name.trim().length > 50 || phone.trim().length > 20 || String(menu).length > 50 || String(email).length > 255)
+      return res.json({ success: false, message: '入力内容が長すぎます' });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '') || !slotTimesForDate(clinic, date).includes(time))
+      return res.json({ success: false, message: 'この日時は予約できません' });
+    const startAt = slotStartAt(date, time);
+    if (startAt.getTime() <= Date.now() + BOOKING_CUTOFF_MS)
+      return res.json({ success: false, message: '受付時間を過ぎています。別の時間をお選びください' });
+    try {
+      const r = await pool.query(
+        `INSERT INTO reservations (clinic_id, name, phone, email, menu, start_at) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
+        [clinic.id, name.trim(), phone.trim(), String(email).trim(), String(menu), startAt]
+      );
+      res.json({ success: true, reservation: { id: r.rows[0].id, date, time, menu: String(menu) } });
+    } catch(e) {
+      if (e.code === '23505') return res.json({ success: false, message: '申し訳ありません、この時間はたった今埋まりました。別の時間をお選びください' });
+      throw e;
+    }
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// ===== ネット予約API（院側・要認証）=====
+app.get('/api/reservations', auth, async (req, res) => {
+  try {
+    const clinicId = await getClinicId(req.userId);
+    if (!clinicId) return res.json({ success: true, reservations: [] });
+    const j = toJST(new Date());
+    const { start } = jstRangeOfDay(j.getUTCFullYear(), j.getUTCMonth() + 1, j.getUTCDate());
+    const past = req.query.past === '1';
+    const r = await pool.query(
+      past
+        ? `SELECT * FROM reservations WHERE clinic_id=$1 AND start_at<$2 ORDER BY start_at DESC LIMIT 100`
+        : `SELECT * FROM reservations WHERE clinic_id=$1 AND start_at>=$2 ORDER BY start_at ASC LIMIT 200`,
+      [clinicId, start]
+    );
+    res.json({ success: true, reservations: r.rows });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+app.put('/api/reservations/:id/cancel', auth, async (req, res) => {
+  try {
+    const clinicId = await getClinicId(req.userId);
+    if (!clinicId) return res.json({ success: false, message: '院が登録されていません' });
+    const r = await pool.query(
+      `UPDATE reservations SET status='cancelled' WHERE id=$1 AND clinic_id=$2 RETURNING id`,
+      [req.params.id, clinicId]
+    );
+    if (!r.rows.length) return res.json({ success: false, message: '予約が見つかりません' });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
 const PORT = process.env.PORT || 3000;
