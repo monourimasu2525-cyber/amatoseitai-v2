@@ -286,9 +286,26 @@ subscriptions   -- 契約状態
 - 顧客管理（customers + visits）
 - 顧客分析ダッシュボード
 
-### Phase 5: SaaS基盤
-- Stripe連携（月額課金）
-- 新規院サインアップフロー
+### Phase 5: ネット予約システム（2026-07-17方針決定・最終ゴール）
+LINEやHPに予約URLを埋め込み、カレンダーから予約できる仕組み（Airリザーブ参考）。
+
+**Step 1: お試し予約ページ（実装済み 2026-07-17）**
+- 公開ページ `/book/[slug]`（認証不要）: 月カレンダー → 時間選択 → 名前・電話・メール入力 → 予約完了
+- 院側 `/app/reservations`: 予約一覧（今後/過去）・キャンセル・予約URLコピー。ナビに「予約」タブ
+- DB: `reservations`（clinic_id, customer_id, name, phone, email, menu, note, start_at, status, created_at）
+  - 二重予約防止: `UNIQUE INDEX (clinic_id, start_at) WHERE status='confirmed'`（DB制約で物理的に防ぐ）
+  - status: confirmed / cancelled（将来: visited / no_show）
+- clinicsに予約設定カラム: booking_open_time('09:00') / booking_close_time('19:00') / booking_slot_minutes(60) / booking_closed_weekdays('0'=日曜)
+- 公開API（認証不要）:
+  - GET /api/booking/:slug — 院名＋メニュー（master_items）
+  - GET /api/booking/:slug/slots?year=&month= — 月の空き枠（休業日・既存予約・受付締切30分前を考慮）
+  - POST /api/booking/:slug/reserve — 予約作成（レート制限15分15回・サーバー側で枠再検証・ユニーク制約違反=「埋まりました」）
+- 院側API: GET /api/reservations（?past=1で過去）・PUT /api/reservations/:id/cancel
+
+**Step 2: 業務接続（未実装）** — 予約から「来院した」ワンタップ → 顧客照合/登録・visits・sales自動作成
+**Step 3: メール通知（未実装）** — Resendで予約確認・前日リマインド
+**Step 4: 設定UI（未実装）** — 営業時間・定休日・枠・受付締切を設定画面から変更、顧客側キャンセル
+**Step 5: SaaS基盤（未実装）** — Stripe連携（月額課金）・新規院サインアップフロー
 
 ---
 
